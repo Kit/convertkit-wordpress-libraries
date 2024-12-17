@@ -304,6 +304,21 @@ trait ConvertKit_API_Traits
     }
 
     /**
+     * Adds a subscriber to a legacy form by subscriber ID
+     *
+     * @param integer $form_id       Legacy Form ID.
+     * @param integer $subscriber_id Subscriber ID.
+     *
+     * @since 2.0.0
+     *
+     * @return WP_Error|array
+     */
+    public function add_subscriber_to_legacy_form(int $form_id, int $subscriber_id)
+    {
+        return $this->post(sprintf('landing_pages/%s/subscribers/%s', $form_id, $subscriber_id));
+    }
+
+    /**
      * List subscribers for a form
      *
      * @param integer   $form_id             Form ID.
