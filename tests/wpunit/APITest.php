@@ -95,6 +95,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN_NO_DATA'],
 			$_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN_NO_DATA']
 		);
+
+		// Wait a second to avoid hitting a 429 rate limit.
+		sleep(1);
 	}
 
 	/**
