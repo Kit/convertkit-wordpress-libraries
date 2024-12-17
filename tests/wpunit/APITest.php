@@ -6388,7 +6388,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$result = $this->api->get_form_html($_ENV['CONVERTKIT_API_LEGACY_FORM_ID'], $_ENV['CONVERTKIT_API_KEY']);
 		$this->assertNotInstanceOf(WP_Error::class, $result);
-		$this->assertStringContainsString('<form id="ck_subscribe_form" class="ck_subscribe_form" action="https://api.convertkit.com/landing_pages/' . $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'] . '/subscribe" data-remote="true">', $result);
+		$this->assertStringContainsString('<form id="ck_subscribe_form" class="ck_subscribe_form" action="https://api.kit.com/landing_pages/' . $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'] . '/subscribe" data-remote="true">', $result);
 
 		// Assert that the API class' manually added UTF-8 Content-Type has been removed prior to output.
 		$this->assertStringNotContainsString('<meta http-equiv="Content-Type" content="text/html; charset=utf-8">', $result);
