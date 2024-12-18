@@ -65,7 +65,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#get-current-account
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_account()
     {
@@ -77,7 +77,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-colors
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_account_colors()
     {
@@ -91,7 +91,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-colors
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function update_account_colors(array $colors)
     {
@@ -106,7 +106,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#get-creator-profile
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_creator_profile()
     {
@@ -118,7 +118,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#get-email-stats
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_email_stats()
     {
@@ -133,7 +133,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#get-growth-stats
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_growth_stats(\DateTime $starting = null, \DateTime $ending = null)
     {
@@ -159,7 +159,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#convertkit-api-forms
      *
-     * @return WP_Error|array
+     * @return mixed|array<int,array>
      */
     public function get_forms(
         string $status = 'active',
@@ -196,7 +196,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#convertkit-api-forms
      *
-     * @return WP_Error|array
+     * @return mixed|array<int,array>
      */
     public function get_landing_pages(
         string $status = 'active',
@@ -221,20 +221,56 @@ trait ConvertKit_API_Traits
     }
 
     /**
+     * Adds subscribers to forms in bulk.
+     *
+     * @param array<array<string,string>> $forms_subscribers_ids Array of arrays comprising of `form_id`, `subscriber_id` and optional `referrer` URL.
+     * @param string                      $callback_url          URL to notify for large batch size when async processing complete.
+     *
+     * @since 2.1.0
+     *
+     * @see https://developers.kit.com/v4.html#bulk-add-subscribers-to-forms
+     *
+     * @return false|object
+     */
+    public function add_subscribers_to_forms(array $forms_subscribers_ids, string $callback_url = '')
+    {
+        // Build parameters.
+        $options = ['additions' => $forms_subscribers_ids];
+        if (!empty($callback_url)) {
+            $options['callback_url'] = $callback_url;
+        }
+
+        // Send request.
+        return $this->post(
+            'bulk/forms/subscribers',
+            $options
+        );
+    }
+
+    /**
      * Adds a subscriber to a form by email address
      *
      * @param integer $form_id       Form ID.
      * @param string  $email_address Email Address.
+     * @param string  $referrer      Referrer.
      *
      * @see https://developers.kit.com/v4.html#add-subscriber-to-form-by-email-address
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
-    public function add_subscriber_to_form_by_email(int $form_id, string $email_address)
+    public function add_subscriber_to_form_by_email(int $form_id, string $email_address, string $referrer = '')
     {
+        // Build parameters.
+        $options = ['email_address' => $email_address];
+
+        if (!empty($referrer)) {
+            $options['referrer'] = $referrer;
+        }
+
+        // Send request.
         return $this->post(
             sprintf('forms/%s/subscribers', $form_id),
-            ['email_address' => $email_address]
+            $options
         );
     }
 
@@ -243,16 +279,28 @@ trait ConvertKit_API_Traits
      *
      * @param integer $form_id       Form ID.
      * @param integer $subscriber_id Subscriber ID.
+     * @param string  $referrer      Referrer URL.
      *
      * @see https://developers.kit.com/v4.html#add-subscriber-to-form
      *
      * @since 2.0.0
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
-    public function add_subscriber_to_form(int $form_id, int $subscriber_id)
+    public function add_subscriber_to_form(int $form_id, int $subscriber_id, string $referrer = '')
     {
-        return $this->post(sprintf('forms/%s/subscribers/%s', $form_id, $subscriber_id));
+        // Build parameters.
+        $options = [];
+
+        if (!empty($referrer)) {
+            $options['referrer'] = $referrer;
+        }
+
+        // Send request.
+        return $this->post(
+            sprintf('forms/%s/subscribers/%s', $form_id, $subscriber_id),
+            $options
+        );
     }
 
     /**
@@ -286,7 +334,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-subscribers-for-a-form
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_form_subscriptions(
         int $form_id,
@@ -342,7 +390,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-sequences
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_sequences(
         bool $include_total_count = false,
@@ -370,7 +418,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#add-subscriber-to-sequence-by-email-address
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function add_subscriber_to_sequence_by_email(int $sequence_id, string $email_address)
     {
@@ -390,7 +438,7 @@ trait ConvertKit_API_Traits
      *
      * @since 2.0.0
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function add_subscriber_to_sequence(int $sequence_id, int $subscriber_id)
     {
@@ -413,7 +461,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-subscribers-for-a-sequence
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_sequence_subscriptions(
         int $sequence_id,
@@ -469,7 +517,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-tags
      *
-     * @return WP_Error|array
+     * @return mixed|array<int,array>
      */
     public function get_tags(
         bool $include_total_count = false,
@@ -498,7 +546,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#create-a-tag
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function create_tag(string $tag)
     {
@@ -518,7 +566,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#bulk-create-tags
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function create_tags(array $tags, string $callback_url = '')
     {
@@ -551,7 +599,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#tag-a-subscriber-by-email-address
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function tag_subscriber_by_email(int $tag_id, string $email_address)
     {
@@ -569,7 +617,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#tag-a-subscriber
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function tag_subscriber(int $tag_id, int $subscriber_id)
     {
@@ -586,7 +634,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#remove-tag-from-subscriber
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function remove_tag_from_subscriber(int $tag_id, int $subscriber_id)
     {
@@ -603,7 +651,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#remove-tag-from-subscriber-by-email-address
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function remove_tag_from_subscriber_by_email(int $tag_id, string $email_address)
     {
@@ -629,7 +677,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-subscribers-for-a-tag
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_tag_subscriptions(
         int $tag_id,
@@ -687,7 +735,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#convertkit-api-email-templates
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_email_templates(
         bool $include_total_count = false,
@@ -728,7 +776,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-subscribers
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_subscribers(
         string $subscriber_state = 'active',
@@ -867,7 +915,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#get-a-subscriber
      *
-     * @return bool|WP_Error|integer
+     * @return false|integer
      */
     public function get_subscriber_id(string $email_address)
     {
@@ -876,12 +924,28 @@ trait ConvertKit_API_Traits
             ['email_address' => $email_address]
         );
 
-        if (!count($subscribers->subscribers)) {
+        if (!is_array($subscribers)) {
+            return false;
+        }
+
+        if (!is_array($subscribers['subscribers'])) {
+            return false;
+        }
+
+        if (!count($subscribers['subscribers'])) {
+            return false;
+        }
+
+        if (!is_array($subscribers->subscribers[0])) {
+            return false;
+        }
+
+        if (!is_int($subscribers->subscribers[0]['id'])) {
             return false;
         }
 
         // Return the subscriber's ID.
-        return $subscribers->subscribers[0]->id;
+        return $subscribers->subscribers[0]['id'];
     }
 
     /**
@@ -891,7 +955,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#get-a-subscriber
      *
-     * @return bool|WP_Error|array
+     * @return mixed|integer
      */
     public function get_subscriber(int $subscriber_id)
     {
@@ -908,7 +972,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#update-a-subscriber
      *
-     * @return WP_Error|array
+     * @return mixed
      */
     public function update_subscriber(
         int $subscriber_id,
@@ -943,7 +1007,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#unsubscribe-subscriber
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function unsubscribe_by_email(string $email_address)
     {
@@ -962,7 +1026,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#unsubscribe-subscriber
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function unsubscribe(int $subscriber_id)
     {
@@ -980,7 +1044,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-tags-for-a-subscriber
      *
-     * @return WP_Error|array
+     * @return mixed|array<int,array>
      */
     public function get_subscriber_tags(
         int $subscriber_id,
@@ -1011,7 +1075,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-broadcasts
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_broadcasts(
         bool $include_total_count = false,
@@ -1057,7 +1121,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#create-a-broadcast
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function create_broadcast(
         string $subject = '',
@@ -1116,7 +1180,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#get-a-broadcast
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function get_broadcast(int $id)
     {
@@ -1131,7 +1195,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#get-stats
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function get_broadcast_stats(int $id)
     {
@@ -1164,7 +1228,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/#create-a-broadcast
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function update_broadcast(
         int $id,
@@ -1226,7 +1290,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#delete-a-broadcast
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function delete_broadcast(int $id)
     {
@@ -1245,7 +1309,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-webhooks
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_webhooks(
         bool $include_total_count = false,
@@ -1279,7 +1343,7 @@ trait ConvertKit_API_Traits
      *
      * @throws \InvalidArgumentException If the event is not supported.
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function create_webhook(string $url, string $event, string $parameter = '')
     {
@@ -1353,7 +1417,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#delete-a-webhook
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function delete_webhook(int $id)
     {
@@ -1372,7 +1436,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-custom-fields
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_custom_fields(
         bool $include_total_count = false,
@@ -1402,7 +1466,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#create-a-custom-field
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function create_custom_field(string $label)
     {
@@ -1422,7 +1486,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#bulk-create-custom-fields
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function create_custom_fields(array $labels, string $callback_url = '')
     {
@@ -1457,7 +1521,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#update-a-custom-field
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function update_custom_field(int $id, string $label)
     {
@@ -1476,7 +1540,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/#destroy-field
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function delete_custom_field(int $id)
     {
@@ -1495,7 +1559,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#list-purchases
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_purchases(
         bool $include_total_count = false,
@@ -1523,7 +1587,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#get-a-purchase
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function get_purchase(int $purchase_id)
     {
@@ -1548,7 +1612,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#create-a-purchase
      *
-     * @return bool|WP_Error|array
+     * @return mixed|object
      */
     public function create_purchase(
         string $email_address,
@@ -1610,7 +1674,7 @@ trait ConvertKit_API_Traits
      *
      * @see https://developers.kit.com/v4.html#convertkit-api-segments
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get_segments(
         bool $include_total_count = false,
@@ -1760,7 +1824,7 @@ trait ConvertKit_API_Traits
      * @param string                                                             $endpoint API Endpoint.
      * @param array<string, int|string|boolean|array<string, int|string>|string> $args     Request arguments.
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function get(string $endpoint, array $args = [])
     {
@@ -1773,7 +1837,7 @@ trait ConvertKit_API_Traits
      * @param string                                                                                                     $endpoint API Endpoint.
      * @param array<string, bool|integer|float|string|null|array<int|string, float|integer|string|array<string|string>>> $args     Request arguments.
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function post(string $endpoint, array $args = [])
     {
@@ -1786,7 +1850,7 @@ trait ConvertKit_API_Traits
      * @param string                                                              $endpoint API Endpoint.
      * @param array<string, bool|integer|string|array<string, int|string>|string> $args     Request arguments.
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function put(string $endpoint, array $args = [])
     {
@@ -1799,7 +1863,7 @@ trait ConvertKit_API_Traits
      * @param string                                                     $endpoint API Endpoint.
      * @param array<string, int|string|array<string, int|string>|string> $args     Request arguments.
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     public function delete(string $endpoint, array $args = [])
     {
@@ -1815,7 +1879,7 @@ trait ConvertKit_API_Traits
      *
      * @throws \Exception If JSON encoding arguments failed.
      *
-     * @return WP_Error|array
+     * @return false|mixed
      */
     abstract public function request(string $endpoint, string $method, array $args = []);
 
