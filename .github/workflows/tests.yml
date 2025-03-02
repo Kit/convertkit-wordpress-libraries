@@ -102,6 +102,10 @@ jobs:
         working-directory: ${{ env.ROOT_DIR }}
         run: wp-cli plugin install ${{ env.INSTALL_PLUGINS }}
 
+      # Move Plugin
+      - name: Move Plugin
+        run: mv /home/runner/work/convertkit-wordpress-libraries/convertkit-wordpress-libraries/convertkit-wordpress-libraries ${{ env.PLUGIN_DIR }}
+
       # Install PHP version to run tests against.
       - name: Install PHP
         uses: shivammathur/setup-php@v2
