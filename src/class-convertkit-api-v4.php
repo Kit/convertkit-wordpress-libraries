@@ -492,6 +492,7 @@ class ConvertKit_API_V4 {
 			array(
 				'api_key'    => $api_key,
 				'api_secret' => $api_secret,
+				'client_id'  => $this->client_id,
 			)
 		);
 
