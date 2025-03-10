@@ -53,9 +53,6 @@ class APINoDataTest extends \Codeception\TestCase\WPTestCase
 			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN_NO_DATA'],
 			$_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN_NO_DATA']
 		);
-
-		// Wait for the API to be ready, to avoid rate limiting.
-		$I->wait(2);
 	}
 
 	/**
