@@ -605,6 +605,38 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	}
 
 	/**
+	 * Test that fetching an Access Token using an invalid client ID returns a WP_Error.
+	 *
+	 * @since   2.0.7
+	 */
+	public function testGetAccessTokenByAPIKeyAndSecretWithInvalidClientID()
+	{
+		$api    = new ConvertKit_API_V4( 'invalidClientID', $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
+		$result = $api->get_access_token_by_api_key_and_secret(
+			$_ENV['CONVERTKIT_API_KEY'],
+			$_ENV['CONVERTKIT_API_SECRET']
+		);
+		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertEquals($result->get_error_code(), $this->errorCode);
+	}
+
+	/**
+	 * Test that fetching an Access Token using a blank client ID returns a WP_Error.
+	 *
+	 * @since   2.0.7
+	 */
+	public function testGetAccessTokenByAPIKeyAndSecretWithBlankClientID()
+	{
+		$api    = new ConvertKit_API_V4( '', $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
+		$result = $api->get_access_token_by_api_key_and_secret(
+			$_ENV['CONVERTKIT_API_KEY'],
+			$_ENV['CONVERTKIT_API_SECRET']
+		);
+		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertEquals($result->get_error_code(), $this->errorCode);
+	}
+
+	/**
 	 * Test that supplying valid API credentials to the API class returns the expected account information.
 	 *
 	 * @since   1.0.0
