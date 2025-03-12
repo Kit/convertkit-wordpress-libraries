@@ -605,6 +605,38 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	}
 
 	/**
+	 * Test that fetching an Access Token using an invalid client ID returns a WP_Error.
+	 *
+	 * @since   2.0.7
+	 */
+	public function testGetAccessTokenByAPIKeyAndSecretWithInvalidClientID()
+	{
+		$api    = new ConvertKit_API_V4( 'invalidClientID', $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
+		$result = $api->get_access_token_by_api_key_and_secret(
+			$_ENV['CONVERTKIT_API_KEY'],
+			$_ENV['CONVERTKIT_API_SECRET']
+		);
+		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertEquals($result->get_error_code(), $this->errorCode);
+	}
+
+	/**
+	 * Test that fetching an Access Token using a blank client ID returns a WP_Error.
+	 *
+	 * @since   2.0.7
+	 */
+	public function testGetAccessTokenByAPIKeyAndSecretWithBlankClientID()
+	{
+		$api    = new ConvertKit_API_V4( '', $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
+		$result = $api->get_access_token_by_api_key_and_secret(
+			$_ENV['CONVERTKIT_API_KEY'],
+			$_ENV['CONVERTKIT_API_SECRET']
+		);
+		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertEquals($result->get_error_code(), $this->errorCode);
+	}
+
+	/**
 	 * Test that supplying valid API credentials to the API class returns the expected account information.
 	 *
 	 * @since   1.0.0
@@ -756,8 +788,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertArrayHasKey('ending', $result['stats']);
 
 		// Assert start and end dates were honored.
-		$this->assertEquals($result['stats']['starting'], $starting->format('Y-m-d') . 'T00:00:00-05:00');
-		$this->assertEquals($result['stats']['ending'], $ending->format('Y-m-d') . 'T23:59:59-05:00');
+		$timezone = ( new DateTime() )->setTimezone(new DateTimeZone('America/New_York'))->format('P'); // Gets timezone offset for New York (-04:00 during DST, -05:00 otherwise).
+		$this->assertEquals($result['stats']['starting'], $starting->format('Y-m-d') . 'T00:00:00' . $timezone);
+		$this->assertEquals($result['stats']['ending'], $ending->format('Y-m-d') . 'T23:59:59' . $timezone);
 	}
 
 	/**
@@ -790,8 +823,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertArrayHasKey('ending', $result['stats']);
 
 		// Assert start and end dates were honored.
-		$this->assertEquals($result['stats']['starting'], $starting->format('Y-m-d') . 'T00:00:00-05:00');
-		$this->assertEquals($result['stats']['ending'], $ending->format('Y-m-d') . 'T23:59:59-05:00');
+		$timezone = ( new DateTime() )->setTimezone(new DateTimeZone('America/New_York'))->format('P'); // Gets timezone offset for New York (-04:00 during DST, -05:00 otherwise).
+		$this->assertEquals($result['stats']['starting'], $starting->format('Y-m-d') . 'T00:00:00' . $timezone);
+		$this->assertEquals($result['stats']['ending'], $ending->format('Y-m-d') . 'T23:59:59' . $timezone);
 	}
 
 	/**
@@ -1249,7 +1283,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetFormSubscriptionsWithAddedAfterParam()
 	{
-		$date   = new \DateTime('2024-01-01');
+		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_form_subscriptions(
 			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
 			'active', // Subscriber state.
@@ -1312,7 +1346,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetFormSubscriptionsWithCreatedAfterParam()
 	{
-		$date   = new \DateTime('2024-01-01');
+		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_form_subscriptions(
 			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
 			'active', // Subscriber state.
@@ -2272,7 +2306,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetSequenceSubscriptionsWithAddedAfterParam()
 	{
-		$date   = new \DateTime('2024-01-01');
+		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_sequence_subscriptions(
 			$_ENV['CONVERTKIT_API_SEQUENCE_ID'], // Sequence ID.
 			'active', // Subscriber state.
@@ -2335,7 +2369,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetSequenceSubscriptionsWithCreatedAfterParam()
 	{
-		$date   = new \DateTime('2024-01-01');
+		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_sequence_subscriptions(
 			$_ENV['CONVERTKIT_API_SEQUENCE_ID'], // Sequence ID.
 			'active', // Subscriber state.
@@ -2441,7 +2475,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Assert has_previous_page and has_next_page are correct.
 		$this->assertTrue($result['pagination']['has_previous_page']);
-		$this->assertTrue($result['pagination']['has_next_page']);
+		$this->assertFalse($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
 		$result = $this->api->get_sequence_subscriptions(
@@ -2654,7 +2688,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	}
 
 	/**
-	 * Test that create_tag() returns a WP_Error when creating
+	 * Test that create_tag() returns the expected data when creating
 	 * a tag that already exists.
 	 *
 	 * @since   1.0.0
@@ -2664,8 +2698,12 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testCreateTagThatExists()
 	{
 		$result = $this->api->create_tag($_ENV['CONVERTKIT_API_TAG_NAME']);
-		$this->assertInstanceOf(WP_Error::class, $result);
-		$this->assertEquals($result->get_error_code(), $this->errorCode);
+
+		// Assert response contains correct data.
+		$this->assertArrayHasKey('id', $result['tag']);
+		$this->assertArrayHasKey('name', $result['tag']);
+		$this->assertArrayHasKey('created_at', $result['tag']);
+		$this->assertEquals($result['tag']['name'], $_ENV['CONVERTKIT_API_TAG_NAME']);
 	}
 
 	/**
@@ -2734,8 +2772,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	}
 
 	/**
-	 * Test that create_tags() returns a WP_Error when creating
-	 * tags that already exists.
+	 * Test that create_tags() returns the expected data when creating
+	 * tags that already exist.
 	 *
 	 * @since   2.0.0
 	 *
@@ -2750,8 +2788,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 			]
 		);
 
-		// Assert failures.
-		$this->assertCount(2, $result['failures']);
+		// Assert existing tags are returned.
+		$this->assertCount(2, $result['tags']);
+		$this->assertEquals($result['tags'][1]['name'], $_ENV['CONVERTKIT_API_TAG_NAME']);
+		$this->assertEquals($result['tags'][0]['name'], $_ENV['CONVERTKIT_API_TAG_NAME_2']);
 	}
 
 	/**
@@ -3127,7 +3167,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetTagSubscriptionsWithTaggedAfterParam()
 	{
-		$date   = new \DateTime('2024-01-01');
+		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_tag_subscriptions(
 			(int) $_ENV['CONVERTKIT_API_TAG_ID'], // Tag ID.
 			'active', // Subscriber state.
@@ -3190,7 +3230,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetTagSubscriptionsWithCreatedAfterParam()
 	{
-		$date   = new \DateTime('2024-01-01');
+		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_tag_subscriptions(
 			(int) $_ENV['CONVERTKIT_API_TAG_ID'], // Tag ID.
 			'active', // Subscriber state.
@@ -3450,7 +3490,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetSubscribersWithCreatedAfterParam()
 	{
-		$date   = new \DateTime('2024-01-01');
+		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_subscribers(
 			'active', // Subscriber state.
 			'', // Email address.
@@ -3507,7 +3547,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetSubscribersWithUpdatedAfterParam()
 	{
-		$date   = new \DateTime('2024-01-01');
+		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_subscribers(
 			'active', // Subscriber state.
 			'', // Email address.
