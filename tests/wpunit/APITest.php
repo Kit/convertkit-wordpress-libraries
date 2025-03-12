@@ -2734,8 +2734,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 				'',
 			]
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
-		$this->assertEquals($result->get_error_code(), $this->errorCode);
+
+		// Assert failures.
+		$this->assertCount(2, $result['failures']);
 	}
 
 	/**
