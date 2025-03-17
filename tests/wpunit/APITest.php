@@ -637,6 +637,27 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	}
 
 	/**
+	 * Test that fetching an Access Token using a tenant_name parameter returns the expected data.
+	 *
+	 * @since   2.0.7
+	 */
+	public function testGetAccessTokenByAPIKeyAndSecretWithTenantName()
+	{
+		$api    = new ConvertKit_API_V4( $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'], $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
+		$result = $api->get_access_token_by_api_key_and_secret(
+			$_ENV['CONVERTKIT_API_KEY'],
+			$_ENV['CONVERTKIT_API_SECRET'],
+			'https://example.com'
+		);
+		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertIsArray($result);
+		$this->assertArrayHasKey('oauth', $result);
+		$this->assertArrayHasKey('access_token', $result['oauth']);
+		$this->assertArrayHasKey('refresh_token', $result['oauth']);
+		$this->assertArrayHasKey('expires_at', $result['oauth']);
+	}
+
+	/**
 	 * Test that supplying valid API credentials to the API class returns the expected account information.
 	 *
 	 * @since   1.0.0
