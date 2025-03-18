@@ -481,20 +481,24 @@ class ConvertKit_API_V4 {
 	 *
 	 * @since   2.0.0
 	 *
-	 * @param   string $api_key    API Key.
-	 * @param   string $api_secret API Secret.
+	 * @param   string      $api_key        API Key.
+	 * @param   string      $api_secret     API Secret.
+	 * @param   bool|string $tenant_name    Tenant Name (if specified, issues tokens specific to that name. Useful for using the same account on multiple sites).
 	 * @return  WP_Error|array
 	 */
-	public function get_access_token_by_api_key_and_secret( $api_key, $api_secret ) {
+	public function get_access_token_by_api_key_and_secret( $api_key, $api_secret, $tenant_name = '' ) {
 
-		return $this->post(
-			'accounts/oauth_access_token',
-			array(
-				'api_key'    => $api_key,
-				'api_secret' => $api_secret,
-				'client_id'  => $this->client_id,
-			)
+		$args = array(
+			'api_key'    => $api_key,
+			'api_secret' => $api_secret,
+			'client_id'  => $this->client_id,
 		);
+
+		if ( $tenant_name ) {
+			$args['tenant_name'] = $tenant_name;
+		}
+
+		return $this->post( 'accounts/oauth_access_token', $args );
 
 	}
 
