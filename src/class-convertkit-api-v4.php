@@ -155,77 +155,27 @@ class ConvertKit_API_V4 {
 			$this->log = new ConvertKit_Log( $this->plugin_path );
 		}
 
-		// Define translatable / localized error strings.
-		// WordPress requires that the text domain be a string (e.g. 'woocommerce-convertkit') and not a variable,
-		// otherwise localization won't work.
-		// phpcs:disable
+		// Define error messages.
 		$this->error_messages = array(
-			// form_subscribe().
-			'form_subscribe_form_id_empty'                => __( 'form_subscribe(): the form_id parameter is empty.', 'convertkit' ),
-			'form_subscribe_email_empty'                  => __( 'form_subscribe(): the email parameter is empty.', 'convertkit' ),
-
-			// sequence_subscribe().
-			'sequence_subscribe_sequence_id_empty'        => __( 'sequence_subscribe(): the sequence_id parameter is empty.', 'convertkit' ),
-			'sequence_subscribe_email_empty'              => __( 'sequence_subscribe(): the email parameter is empty.', 'convertkit' ),
-
-			// tag_subscribe().
-			'tag_subscribe_tag_id_empty'                  => __( 'tag_subscribe(): the tag_id parameter is empty.', 'convertkit' ),
-			'tag_subscribe_email_empty'                   => __( 'tag_subscribe(): the email parameter is empty.', 'convertkit' ),
-
-			// tag_unsubscribe().
-			'tag_unsubscribe_tag_id_empty'                => __( 'tag_unsubscribe(): the tag_id parameter is empty.', 'convertkit' ),
-			'tag_unsubscribe_email_empty'                 => __( 'tag_unsubscribe(): the email parameter is empty.', 'convertkit' ),
-			'tag_unsubscribe_email_invalid'               => __( 'tag_unsubscribe(): the email parameter is not a valid email address.', 'convertkit' ),
-
-			// get_subscriber_by_email().
-			'get_subscriber_by_email_email_empty'         => __( 'get_subscriber_by_email(): the email parameter is empty.', 'convertkit' ),
-			/* translators: Email Address */
-			'get_subscriber_by_email_none'                => __( 'No subscriber(s) exist in ConvertKit matching the email address %s.', 'convertkit' ),
-
-			// get_subscriber_by_id().
-			'get_subscriber_by_id_subscriber_id_empty'    => __( 'get_subscriber_by_id(): the subscriber_id parameter is empty.', 'convertkit' ),
-
-			// get_subscriber_tags().
-			'get_subscriber_tags_subscriber_id_empty'     => __( 'get_subscriber_tags(): the subscriber_id parameter is empty.', 'convertkit' ),
-
-			// unsubscribe_email().
-			'unsubscribe_email_empty'                     => __( 'unsubscribe(): the email parameter is empty.', 'convertkit' ),
-
-			// broadcast_delete().
-			'broadcast_delete_broadcast_id_empty'		  => __( 'broadcast_delete(): the broadcast_id parameter is empty.', 'convertkit' ),
-
-			// get_all_posts().
-			'get_all_posts_posts_per_request_bound_too_low' => __( 'get_all_posts(): the posts_per_request parameter must be equal to or greater than 1.', 'convertkit' ),
-			'get_all_posts_posts_per_request_bound_too_high' => __( 'get_all_posts(): the posts_per_request parameter must be equal to or less than 50.', 'convertkit' ),
-
-			// get_posts().
-			'get_posts_page_parameter_bound_too_low'      => __( 'get_posts(): the page parameter must be equal to or greater than 1.', 'convertkit' ),
-			'get_posts_per_page_parameter_bound_too_low'  => __( 'get_posts(): the per_page parameter must be equal to or greater than 1.', 'convertkit' ),
-			'get_posts_per_page_parameter_bound_too_high' => __( 'get_posts(): the per_page parameter must be equal to or less than 50.', 'convertkit' ),
-
-			// subscriber_authentication_send_code().
-			'subscriber_authentication_send_code_email_empty'			=> __( 'subscriber_authentication_send_code(): the email parameter is empty.', 'convertkit' ),
-			'subscriber_authentication_send_code_redirect_url_empty'	=> __( 'subscriber_authentication_send_code(): the redirect_url parameter is empty.', 'convertkit' ),
-			'subscriber_authentication_send_code_redirect_url_invalid' 	=> __( 'subscriber_authentication_send_code(): the redirect_url parameter is not a valid URL.', 'convertkit' ),
-			'subscriber_authentication_send_code_response_token_missing'=> __( 'subscriber_authentication_send_code(): the token parameter is missing from the API response.', 'convertkit' ),
-			
-			// subscriber_authentication_verify().
-			'subscriber_authentication_verify_token_empty'					  => __( 'subscriber_authentication_verify(): the token parameter is empty.', 'convertkit' ),
-			'subscriber_authentication_verify_subscriber_code_empty'		  => __( 'subscriber_authentication_verify(): the subscriber_code parameter is empty.', 'convertkit' ),
-			'subscriber_authentication_verify_response_error' 				  => __( 'The entered code is invalid. Please try again, or click the link sent in the email.', 'convertkit' ),
-
-			// profile().
-			'profiles_signed_subscriber_id_empty' 		  => __( 'profiles(): the signed_subscriber_id parameter is empty.', 'convertkit' ),
-
-			// request().
-			/* translators: HTTP method */
-			'request_method_unsupported'                  => __( 'API request method %s is not supported in ConvertKit_API class.', 'convertkit' ),
-			'request_rate_limit_exceeded'                 => __( 'ConvertKit API Error: Rate limit hit.', 'convertkit' ),
-			'request_internal_server_error'               => __( 'ConvertKit API Error: Internal server error.', 'convertkit' ),
-			'request_bad_gateway'                 		  => __( 'ConvertKit API Error: Bad gateway.', 'convertkit' ),
-			'response_type_unexpected' 					  => __( 'ConvertKit API Error: The response is not of the expected type array.', 'convertkit' ),
+			'get_all_posts_posts_per_request_bound_too_low' => 'get_all_posts(): the posts_per_request parameter must be equal to or greater than 1.',
+			'get_all_posts_posts_per_request_bound_too_high' => 'get_all_posts(): the posts_per_request parameter must be equal to or less than 50.',
+			'get_posts_page_parameter_bound_too_low'       => 'get_posts(): the page parameter must be equal to or greater than 1.',
+			'get_posts_per_page_parameter_bound_too_low'   => 'get_posts(): the per_page parameter must be equal to or greater than 1.',
+			'get_posts_per_page_parameter_bound_too_high'  => 'get_posts(): the per_page parameter must be equal to or less than 50.',
+			'subscriber_authentication_send_code_email_empty' => 'subscriber_authentication_send_code(): the email parameter is empty.',
+			'subscriber_authentication_send_code_redirect_url_empty' => 'subscriber_authentication_send_code(): the redirect_url parameter is empty.',
+			'subscriber_authentication_send_code_redirect_url_invalid' => 'subscriber_authentication_send_code(): the redirect_url parameter is not a valid URL.',
+			'subscriber_authentication_send_code_response_token_missing' => 'subscriber_authentication_send_code(): the token parameter is missing from the API response.',
+			'subscriber_authentication_verify_token_empty' => 'subscriber_authentication_verify(): the token parameter is empty.',
+			'subscriber_authentication_verify_subscriber_code_empty' => 'subscriber_authentication_verify(): the subscriber_code parameter is empty.',
+			'subscriber_authentication_verify_response_error' => 'The entered code is invalid. Please try again, or click the link sent in the email.',
+			'profiles_signed_subscriber_id_empty'          => 'profiles(): the signed_subscriber_id parameter is empty.',
+			'request_method_unsupported'                   => 'API request method %s is not supported in ConvertKit_API class.',
+			'request_rate_limit_exceeded'                  => 'ConvertKit API Error: Rate limit hit.',
+			'request_internal_server_error'                => 'ConvertKit API Error: Internal server error.',
+			'request_bad_gateway'                          => 'ConvertKit API Error: Bad gateway.',
+			'response_type_unexpected'                     => 'ConvertKit API Error: The response is not of the expected type array.',
 		);
-		// phpcs:enable
 
 	}
 
