@@ -160,40 +160,6 @@ class ConvertKit_API_V4 {
 		// otherwise localization won't work.
 		// phpcs:disable
 		$this->error_messages = array(
-			// form_subscribe().
-			'form_subscribe_form_id_empty'                => __( 'form_subscribe(): the form_id parameter is empty.', 'convertkit' ),
-			'form_subscribe_email_empty'                  => __( 'form_subscribe(): the email parameter is empty.', 'convertkit' ),
-
-			// sequence_subscribe().
-			'sequence_subscribe_sequence_id_empty'        => __( 'sequence_subscribe(): the sequence_id parameter is empty.', 'convertkit' ),
-			'sequence_subscribe_email_empty'              => __( 'sequence_subscribe(): the email parameter is empty.', 'convertkit' ),
-
-			// tag_subscribe().
-			'tag_subscribe_tag_id_empty'                  => __( 'tag_subscribe(): the tag_id parameter is empty.', 'convertkit' ),
-			'tag_subscribe_email_empty'                   => __( 'tag_subscribe(): the email parameter is empty.', 'convertkit' ),
-
-			// tag_unsubscribe().
-			'tag_unsubscribe_tag_id_empty'                => __( 'tag_unsubscribe(): the tag_id parameter is empty.', 'convertkit' ),
-			'tag_unsubscribe_email_empty'                 => __( 'tag_unsubscribe(): the email parameter is empty.', 'convertkit' ),
-			'tag_unsubscribe_email_invalid'               => __( 'tag_unsubscribe(): the email parameter is not a valid email address.', 'convertkit' ),
-
-			// get_subscriber_by_email().
-			'get_subscriber_by_email_email_empty'         => __( 'get_subscriber_by_email(): the email parameter is empty.', 'convertkit' ),
-			/* translators: Email Address */
-			'get_subscriber_by_email_none'                => __( 'No subscriber(s) exist in ConvertKit matching the email address %s.', 'convertkit' ),
-
-			// get_subscriber_by_id().
-			'get_subscriber_by_id_subscriber_id_empty'    => __( 'get_subscriber_by_id(): the subscriber_id parameter is empty.', 'convertkit' ),
-
-			// get_subscriber_tags().
-			'get_subscriber_tags_subscriber_id_empty'     => __( 'get_subscriber_tags(): the subscriber_id parameter is empty.', 'convertkit' ),
-
-			// unsubscribe_email().
-			'unsubscribe_email_empty'                     => __( 'unsubscribe(): the email parameter is empty.', 'convertkit' ),
-
-			// broadcast_delete().
-			'broadcast_delete_broadcast_id_empty'		  => __( 'broadcast_delete(): the broadcast_id parameter is empty.', 'convertkit' ),
-
 			// get_all_posts().
 			'get_all_posts_posts_per_request_bound_too_low' => __( 'get_all_posts(): the posts_per_request parameter must be equal to or greater than 1.', 'convertkit' ),
 			'get_all_posts_posts_per_request_bound_too_high' => __( 'get_all_posts(): the posts_per_request parameter must be equal to or less than 50.', 'convertkit' ),
