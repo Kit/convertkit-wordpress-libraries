@@ -30,6 +30,7 @@ jobs:
       DB_USER: root
       DB_PASS: root
       DB_HOST: localhost
+      INSTALL_PLUGINS: "woocommerce" # Don't include this repository's Plugin here.
 
     # Defines the WordPress and PHP Versions matrix to run tests on.
     strategy:
@@ -87,6 +88,11 @@ jobs:
       - name: Install WordPress
         working-directory: ${{ env.ROOT_DIR }}
         run: wp-cli core install --url=127.0.0.1 --title=ConvertKit --admin_user=admin --admin_password=password --admin_email=wordpress@convertkit.local
+
+      # env.INSTALL_PLUGINS is a list of Plugin slugs, space separated e.g. contact-form-7 woocommerce.
+      - name: Install Free Third Party WordPress Plugins
+        working-directory: ${{ env.ROOT_DIR }}
+        run: wp-cli plugin install ${{ env.INSTALL_PLUGINS }}
 
       # Install PHP version to run tests against.
       - name: Install PHP
