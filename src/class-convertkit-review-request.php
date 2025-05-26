@@ -234,7 +234,7 @@ class ConvertKit_Review_Request {
 		update_option( $this->plugin_slug . '-review-dismissed', 1 );
 
 		// Send success response if called via AJAX.
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+		if ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) {
 			wp_send_json_success( 1 );
 		}
 

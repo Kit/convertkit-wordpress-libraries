@@ -44,40 +44,7 @@ Create a blank `test` database in MySQL, with a MySQL user who can read and writ
 
 ### Configure Testing Environment
 
-Copy the `.env.example` file to `.env.testing` in the root of this repository, changing folder and database credentials as necessary:
-
-```
-TEST_SITE_DB_DSN=mysql:host=localhost;dbname=test
-TEST_SITE_DB_HOST=localhost
-TEST_SITE_DB_NAME=test
-TEST_SITE_DB_USER=root
-TEST_SITE_DB_PASSWORD=root
-TEST_SITE_TABLE_PREFIX=wp_
-TEST_SITE_ADMIN_USERNAME=admin
-TEST_SITE_ADMIN_PASSWORD=password
-TEST_SITE_WP_ADMIN_PATH=/wp-admin
-WP_ROOT_FOLDER="/Users/tim/Local Sites/convertkit-github/app/public"
-TEST_DB_NAME=test
-TEST_DB_HOST=localhost
-TEST_DB_USER=root
-TEST_DB_PASSWORD=root
-TEST_TABLE_PREFIX=wp_
-TEST_SITE_WP_URL=http://convertkit.local
-TEST_SITE_WP_DOMAIN=convertkit.local
-TEST_SITE_ADMIN_EMAIL=wordpress@convertkit.local
-CONVERTKIT_OAUTH_ACCESS_TOKEN=
-CONVERTKIT_OAUTH_REFRESH_TOKEN=
-CONVERTKIT_OAUTH_ACCESS_TOKEN_NO_DATA=
-CONVERTKIT_OAUTH_REFRESH_TOKEN_NO_DATA=
-CONVERTKIT_OAUTH_CLIENT_ID=
-CONVERTKIT_OAUTH_REDIRECT_URI=
-CONVERTKIT_API_FORM_ID="2765139"
-CONVERTKIT_API_SEQUENCE_ID="1030824"
-CONVERTKIT_API_TAG_ID="2744672"
-CONVERTKIT_API_SUBSCRIBER_EMAIL="optin@n7studios.com"
-CONVERTKIT_API_SUBSCRIBER_ID="1579118532"
-
-```
+Copy the `.env.example` file to `.env.testing` in the root of this repository, changing folder and database credentials as necessary.
 
 #### Codeception
 
@@ -92,28 +59,7 @@ This tells Codeception to read the above `.env.testing` file when testing on the
 #### PHPStan
 
 Copy the `phpstan.neon.example` file to `phpstan.neon` in the root of this repository, changing the `scanDirectories` to point to your
-local WordPress installation:
-```yaml
-# PHPStan configuration for local static analysis.
-
-# Include PHPStan for WordPress configuration.
-includes:
-    - vendor/szepeviktor/phpstan-wordpress/extension.neon
-
-# Parameters
-parameters:
-    # Paths to scan
-    paths:
-        - src/
-
-    # Location of WordPress Plugins for PHPStan to scan, building symbols.
-    scanDirectories:
-        - /Users/tim/Local Sites/convertkit-github/app/public/wp-content/plugins
-
-    # Should not need to edit anything below here
-    # Rule Level: https://phpstan.org/user-guide/rule-levels
-    level: 5
-```
+local WordPress installation.
 
 ### Install Packages
 
