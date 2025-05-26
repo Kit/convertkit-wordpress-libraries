@@ -4708,7 +4708,7 @@ class APITest extends WPTestCase
 		$result = $this->api->create_broadcast(
 			'Test Subject',
 			'Test Content',
-			'Test Broadcast from WordPress Libraries',
+			'Test Broadcast from WordPress Libraries'
 		);
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
@@ -4974,7 +4974,7 @@ class APITest extends WPTestCase
 		// Create a webhook first.
 		$result = $this->api->create_webhook(
 			'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
-			'subscriber.subscriber_activate',
+			'subscriber.subscriber_activate'
 		);
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
@@ -5044,7 +5044,7 @@ class APITest extends WPTestCase
 	 */
 	public function testCreateWebhookWithInvalidEvent()
 	{
-		$this->expectException(InvalidArgumentException::class);
+		$this->expectException(\InvalidArgumentException::class);
 		$this->api->create_webhook(
 			'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
 			'invalid.event'
