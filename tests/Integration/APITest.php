@@ -4906,11 +4906,11 @@ class APITest extends WPTestCase
 		$results = [
 			$this->api->create_webhook(
 				'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
-				'subscriber.subscriber_activate',
+				'subscriber.subscriber_activate'
 			),
 			$this->api->create_webhook(
 				'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
-				'subscriber.subscriber_activate',
+				'subscriber.subscriber_activate'
 			),
 		];
 
@@ -6241,7 +6241,7 @@ class APITest extends WPTestCase
 			2.00, // shipping.
 			3.00, // discount.
 			21.00, // total.
-			new \DateTime('now'), // transaction time.
+			new \DateTime('now') // transaction time.
 		);
 
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
