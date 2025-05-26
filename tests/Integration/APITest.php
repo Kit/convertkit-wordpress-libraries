@@ -1347,7 +1347,7 @@ class APITest extends WPTestCase
 			null, // Created after.
 			null, // Created before.
 			null, // Added after.
-			$date, // Added before.
+			$date // Added before.
 		);
 
 		// Assert subscribers and pagination exist.
