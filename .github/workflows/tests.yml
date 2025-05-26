@@ -30,6 +30,7 @@ jobs:
       DB_USER: root
       DB_PASS: root
       DB_HOST: localhost
+      INSTALL_PLUGINS: "woocommerce" # Don't include this repository's Plugin here.
       CONVERTKIT_API_KEY: ${{ secrets.CONVERTKIT_API_KEY }}
       CONVERTKIT_API_SECRET: ${{ secrets.CONVERTKIT_API_SECRET }}
       CONVERTKIT_OAUTH_ACCESS_TOKEN: ${{ secrets.CONVERTKIT_OAUTH_ACCESS_TOKEN }}
@@ -96,6 +97,11 @@ jobs:
       - name: Install WordPress
         working-directory: ${{ env.ROOT_DIR }}
         run: wp-cli core install --url=127.0.0.1 --title=ConvertKit --admin_user=admin --admin_password=password --admin_email=wordpress@convertkit.local
+
+      # env.INSTALL_PLUGINS is a list of Plugin slugs, space separated e.g. contact-form-7 woocommerce.
+      - name: Install Free Third Party WordPress Plugins
+        working-directory: ${{ env.ROOT_DIR }}
+        run: wp-cli plugin install ${{ env.INSTALL_PLUGINS }}
 
       # Move Plugin
       - name: Move Plugin
