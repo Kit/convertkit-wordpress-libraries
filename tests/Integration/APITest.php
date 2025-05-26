@@ -1441,7 +1441,7 @@ class APITest extends WPTestCase
 			false, // Include total count.
 			'', // After cursor.
 			'', // Before cursor.
-			1, // Per page.
+			1 // Per page.
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1466,7 +1466,7 @@ class APITest extends WPTestCase
 			false, // Include total count.
 			$result['pagination']['end_cursor'], // After cursor.
 			'', // Before cursor.
-			1, // Per page.
+			1 // Per page.
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1491,7 +1491,7 @@ class APITest extends WPTestCase
 			false, // Include total count.
 			'', // After cursor.
 			$result['pagination']['start_cursor'], // Before cursor.
-			1, // Per page.
+			1 // Per page.
 		);
 
 		// Assert subscribers and pagination exist.
