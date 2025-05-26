@@ -796,9 +796,9 @@ class APITest extends WPTestCase
 	public function testGetGrowthStatsWithStartDate()
 	{
 		// Define start and end dates.
-		$starting = new DateTime('now');
+		$starting = new \DateTime('now');
 		$starting->modify('-7 days');
-		$ending = new DateTime('now');
+		$ending = new \DateTime('now');
 
 		// Send request.
 		$result = $this->api->get_growth_stats($starting);
@@ -814,7 +814,7 @@ class APITest extends WPTestCase
 		$this->assertArrayHasKey('ending', $result['stats']);
 
 		// Assert start and end dates were honored.
-		$timezone = ( new DateTime() )->setTimezone(new DateTimeZone('America/New_York'))->format('P'); // Gets timezone offset for New York (-04:00 during DST, -05:00 otherwise).
+		$timezone = ( new \DateTime() )->setTimezone(new \DateTimeZone('America/New_York'))->format('P'); // Gets timezone offset for New York (-04:00 during DST, -05:00 otherwise).
 		$this->assertEquals($result['stats']['starting'], $starting->format('Y-m-d') . 'T00:00:00' . $timezone);
 		$this->assertEquals($result['stats']['ending'], $ending->format('Y-m-d') . 'T23:59:59' . $timezone);
 	}
@@ -830,9 +830,9 @@ class APITest extends WPTestCase
 	public function testGetGrowthStatsWithEndDate()
 	{
 		// Define start and end dates.
-		$starting = new DateTime('now');
+		$starting = new \DateTime('now');
 		$starting->modify('-90 days');
-		$ending = new DateTime('now');
+		$ending = new \DateTime('now');
 		$ending->modify('-7 days');
 
 		// Send request.
@@ -849,7 +849,7 @@ class APITest extends WPTestCase
 		$this->assertArrayHasKey('ending', $result['stats']);
 
 		// Assert start and end dates were honored.
-		$timezone = ( new DateTime() )->setTimezone(new DateTimeZone('America/New_York'))->format('P'); // Gets timezone offset for New York (-04:00 during DST, -05:00 otherwise).
+		$timezone = ( new \DateTime() )->setTimezone(new \DateTimeZone('America/New_York'))->format('P'); // Gets timezone offset for New York (-04:00 during DST, -05:00 otherwise).
 		$this->assertEquals($result['stats']['starting'], $starting->format('Y-m-d') . 'T00:00:00' . $timezone);
 		$this->assertEquals($result['stats']['ending'], $ending->format('Y-m-d') . 'T23:59:59' . $timezone);
 	}
@@ -2836,7 +2836,7 @@ class APITest extends WPTestCase
 		// Tag subscriber by email.
 		$subscriber = $this->api->tag_subscriber_by_email(
 			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			$emailAddress,
+			$emailAddress
 		);
 		$this->assertArrayHasKey('subscriber', $subscriber);
 		$this->assertArrayHasKey('id', $subscriber['subscriber']);
@@ -2909,7 +2909,7 @@ class APITest extends WPTestCase
 		// Tag subscriber by email.
 		$result = $this->api->tag_subscriber(
 			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			$subscriber['subscriber']['id'],
+			$subscriber['subscriber']['id']
 		);
 		$this->assertArrayHasKey('subscriber', $result);
 		$this->assertArrayHasKey('id', $result['subscriber']);
@@ -2982,7 +2982,7 @@ class APITest extends WPTestCase
 		// Tag subscriber by email.
 		$subscriber = $this->api->tag_subscriber_by_email(
 			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			$emailAddress,
+			$emailAddress
 		);
 
 		// Remove tag from subscriber.
@@ -3014,7 +3014,7 @@ class APITest extends WPTestCase
 		// Tag subscriber by email.
 		$subscriber = $this->api->tag_subscriber_by_email(
 			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			$emailAddress,
+			$emailAddress
 		);
 
 		// Remove tag from subscriber.
@@ -3060,7 +3060,7 @@ class APITest extends WPTestCase
 		// Tag subscriber by email.
 		$subscriber = $this->api->tag_subscriber_by_email(
 			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			$emailAddress,
+			$emailAddress
 		);
 
 		// Remove tag from subscriber.
@@ -4759,9 +4759,9 @@ class APITest extends WPTestCase
 	public function testCreatePublicBroadcastWithValidDates()
 	{
 		// Create DateTime object.
-		$publishedAt = new DateTime('now');
+		$publishedAt = new \DateTime('now');
 		$publishedAt->modify('+7 days');
-		$sendAt = new DateTime('now');
+		$sendAt = new \DateTime('now');
 		$sendAt->modify('+14 days');
 
 		// Create broadcast first.
@@ -6241,7 +6241,7 @@ class APITest extends WPTestCase
 			2.00, // shipping.
 			3.00, // discount.
 			21.00, // total.
-			new DateTime('now'), // transaction time.
+			new \DateTime('now'), // transaction time.
 		);
 
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
