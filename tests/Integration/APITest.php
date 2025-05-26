@@ -5885,7 +5885,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->subscriber_authentication_send_code(
 			$_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL'],
-			$_ENV['TEST_SITE_WP_URL']
+			$_ENV['WORDPRESS_URL']
 		);
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
 	}
@@ -5900,7 +5900,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->subscriber_authentication_send_code(
 			'email-not-subscribed@kit.com',
-			$_ENV['TEST_SITE_WP_URL']
+			$_ENV['WORDPRESS_URL']
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -5917,7 +5917,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->subscriber_authentication_send_code(
 			'',
-			$_ENV['TEST_SITE_WP_URL']
+			$_ENV['WORDPRESS_URL']
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -5934,7 +5934,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->subscriber_authentication_send_code(
 			'not-an-email-address',
-			$_ENV['TEST_SITE_WP_URL']
+			$_ENV['WORDPRESS_URL']
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
