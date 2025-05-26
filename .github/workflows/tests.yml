@@ -40,13 +40,14 @@ jobs:
       CONVERTKIT_OAUTH_REDIRECT_URI: ${{ secrets.CONVERTKIT_OAUTH_REDIRECT_URI }}
       CONVERTKIT_API_SIGNED_SUBSCRIBER_ID: ${{ secrets.CONVERTKIT_API_SIGNED_SUBSCRIBER_ID }}
       CONVERTKIT_API_SUBSCRIBER_TOKEN: ${{ secrets.CONVERTKIT_API_SUBSCRIBER_TOKEN }}
+      WP_ENVIRONMENT_TYPE: local # Required to ensure wp_get_environment_type() returns local for tests.
 
     # Defines the WordPress and PHP Versions matrix to run tests on.
     strategy:
       fail-fast: false
       matrix:
         wp-versions: [ 'latest' ] #[ 'latest', '6.1.1' ]
-        php-versions: [ '7.4', '8.0', '8.1', '8.2', '8.3', '8.4' ] #[ '7.4', '8.0', '8.1', '8.2' ]
+        php-versions: [ '8.0', '8.1', '8.2', '8.3', '8.4' ] #[ '7.4', '8.0', '8.1', '8.2' ]
 
     # Steps to install, configure and run tests
     steps:
