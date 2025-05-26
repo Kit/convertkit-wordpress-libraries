@@ -1,16 +1,21 @@
 <?php
+
+namespace Tests;
+
+use lucatume\WPBrowser\TestCase\WPTestCase;
+
 /**
  * Tests for the ConvertKit_API class when using a blank
  * ConvertKit account.
  *
  * @since   2.0.0
  */
-class APINoDataTest extends \Codeception\TestCase\WPTestCase
+class APINoDataTest extends WPTestCase
 {
 	/**
 	 * The testing implementation.
 	 *
-	 * @var \WpunitTester.
+	 * @var \IntegrationTester
 	 */
 	protected $tester;
 
@@ -47,12 +52,25 @@ class APINoDataTest extends \Codeception\TestCase\WPTestCase
 		require_once 'src/class-convertkit-log.php';
 
 		// Initialize the classes we want to test.
-		$this->api = new ConvertKit_API_V4(
+		$this->api = new \ConvertKit_API_V4(
 			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
 			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
 			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN_NO_DATA'],
 			$_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN_NO_DATA']
 		);
+	}
+
+	/**
+	 * Performs actions after each test.
+	 *
+	 * @since   2.1.0
+	 */
+	public function tearDown(): void
+	{
+		// Destroy the classes we tested.
+		unset($this->api);
+
+		parent::tearDown();
 	}
 
 	/**
@@ -210,7 +228,7 @@ class APINoDataTest extends \Codeception\TestCase\WPTestCase
 	public function testGetPostsNoData()
 	{
 		$result = $this->api->get_posts();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertCount(0, $result);
 	}
@@ -224,7 +242,7 @@ class APINoDataTest extends \Codeception\TestCase\WPTestCase
 	public function testGetAllPostsNoData()
 	{
 		$result = $this->api->get_all_posts();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertCount(0, $result);
 	}
@@ -238,7 +256,7 @@ class APINoDataTest extends \Codeception\TestCase\WPTestCase
 	public function testGetProducts()
 	{
 		$result = $this->api->get_products();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertCount(0, $result);
 	}
@@ -254,7 +272,7 @@ class APINoDataTest extends \Codeception\TestCase\WPTestCase
 	public function testGetBroadcasts()
 	{
 		$result = $this->api->get_broadcasts();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result['broadcasts']);
 		$this->assertCount(1, $result['broadcasts']);
 	}
@@ -271,7 +289,7 @@ class APINoDataTest extends \Codeception\TestCase\WPTestCase
 	 */
 	private function assertNoData($result, $key, $count = 0)
 	{
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertCount($count, $result[ $key ]);
 	}
