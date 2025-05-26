@@ -1610,7 +1610,7 @@ class APITest extends WPTestCase
 		$result = $this->api->add_subscriber_to_form_by_email(
 			(int) $_ENV['CONVERTKIT_API_FORM_ID'],
 			$emailAddress,
-			'https://mywebsite.com/bfpromo/',
+			'https://mywebsite.com/bfpromo/'
 		);
 
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
@@ -1660,7 +1660,7 @@ class APITest extends WPTestCase
 		$result = $this->api->add_subscriber_to_form_by_email(
 			(int) $_ENV['CONVERTKIT_API_FORM_ID'],
 			$emailAddress,
-			$referrer,
+			$referrer
 		);
 
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
@@ -1788,7 +1788,7 @@ class APITest extends WPTestCase
 		$result = $this->api->add_subscriber_to_form(
 			(int) $_ENV['CONVERTKIT_API_FORM_ID'],
 			$subscriber['subscriber']['id'],
-			'https://mywebsite.com/bfpromo/',
+			'https://mywebsite.com/bfpromo/'
 		);
 
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
@@ -1838,7 +1838,7 @@ class APITest extends WPTestCase
 		$result = $this->api->add_subscriber_to_form(
 			(int) $_ENV['CONVERTKIT_API_FORM_ID'],
 			$subscriber['subscriber']['id'],
-			$referrer,
+			$referrer
 		);
 
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
