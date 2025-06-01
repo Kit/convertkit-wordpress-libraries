@@ -88,17 +88,17 @@ class APITest extends WPTestCase
 
 		// Initialize the classes we want to test.
 		$this->api = new \ConvertKit_API_V4(
-			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
-			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
-			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
-			$_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN']
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
+			refresh_token: $_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN']
 		);
 
 		$this->api_no_data = new \ConvertKit_API_V4(
-			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
-			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
-			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN_NO_DATA'],
-			$_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN_NO_DATA']
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN_NO_DATA'],
+			refresh_token: $_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN_NO_DATA']
 		);
 
 		// Wait a second to avoid hitting a 429 rate limit.
@@ -151,19 +151,19 @@ class APITest extends WPTestCase
 
 		// Initialize API with logging enabled.
 		$api = new \ConvertKit_API_V4(
-			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
-			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
-			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
-			$_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN'],
-			true
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
+			refresh_token: $_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN'],
+			debug: true
 		);
 
 		// Perform actions that will write sensitive data to the log file.
 		$api->form_subscribe(
-			$_ENV['CONVERTKIT_API_FORM_ID'],
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL'],
-			'First Name',
-			array(
+			form_id: $_ENV['CONVERTKIT_API_FORM_ID'],
+			email: $_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL'],
+			first_name: 'First Name',
+			custom_fields: array(
 				'last_name' => 'Last',
 			)
 		);
@@ -199,10 +199,10 @@ class APITest extends WPTestCase
 	public function test401Unauthorized()
 	{
 		$api    = new \ConvertKit_API_V4(
-			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
-			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
-			'not-a-real-access-token',
-			'not-a-real-refresh-token'
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: 'not-a-real-access-token',
+			refresh_token: 'not-a-real-refresh-token'
 		);
 		$result = $api->get_account();
 		$this->assertInstanceOf(\WP_Error::class, $result);
@@ -220,8 +220,8 @@ class APITest extends WPTestCase
 	{
 		// Force WordPress HTTP classes and functions to return a 429 error.
 		$this->mockResponses(
-			429,
-			'Rate limit hit'
+			httpCode: 429,
+			httpMessage: 'Rate limit hit'
 		);
 		$result = $this->api->get_account(); // The API function we use doesn't matter, as mockResponse forces a 429 error.
 		$this->assertInstanceOf(\WP_Error::class, $result);
@@ -238,7 +238,10 @@ class APITest extends WPTestCase
 	public function test500InternalServerError()
 	{
 		// Force WordPress HTTP classes and functions to return a 500 error.
-		$this->mockResponses( 500, 'Internal server error.' );
+		$this->mockResponses(
+			httpCode: 500,
+			httpMessage: 'Internal server error.'
+		);
 		$result = $this->api->get_account(); // The API function we use doesn't matter, as mockResponse forces a 500 error.
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -254,7 +257,10 @@ class APITest extends WPTestCase
 	public function test502BadGateway()
 	{
 		// Force WordPress HTTP classes and functions to return a 502 error.
-		$this->mockResponses( 502, 'Bad gateway.' );
+		$this->mockResponses(
+			httpCode: 502,
+			httpMessage: 'Bad gateway.'
+		);
 		$result = $this->api->get_account(); // The API function we use doesn't matter, as mockResponse forces a 502 error.
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -283,12 +289,12 @@ class APITest extends WPTestCase
 
 		// Perform a request.
 		$api    = new \ConvertKit_API_V4(
-			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
-			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
-			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
-			$_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN'],
-			false,
-			'TestContext'
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
+			refresh_token: $_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN'],
+			debug: false,
+			context: 'TestContext'
 		);
 		$result = $api->get_account();
 	}
@@ -419,7 +425,11 @@ class APITest extends WPTestCase
 		);
 
 		// Mock the API response.
-		$this->mockResponses( 200, 'OK', wp_json_encode( $params ) );
+		$this->mockResponses(
+			httpCode: 200,
+			httpMessage: 'OK',
+			body: wp_json_encode( $params )
+		);
 
 		// Send request.
 		$result = $this->api->get_access_token( 'auth-code' );
@@ -466,9 +476,9 @@ class APITest extends WPTestCase
 		// access and refresh token being provided, which would result in
 		// other tests breaking due to changed tokens.
 		$this->mockResponses(
-			200,
-			'OK',
-			wp_json_encode(
+			httpCode: 200,
+			httpMessage: 'OK',
+			body: wp_json_encode(
 				array(
 					'access_token'  => $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
 					'refresh_token' => $_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN'],
@@ -507,10 +517,10 @@ class APITest extends WPTestCase
 	{
 		// Setup API.
 		$api = new \ConvertKit_API_V4(
-			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
-			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
-			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
-			'not-a-real-refresh-token'
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
+			refresh_token: 'not-a-real-refresh-token'
 		);
 
 		$result = $api->refresh_token();
@@ -551,7 +561,10 @@ class APITest extends WPTestCase
 	 */
 	public function testNoAPICredentials()
 	{
-		$api    = new \ConvertKit_API_V4( $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'], $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
+		$api    = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
+		);
 		$result = $api->get_account();
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -565,7 +578,12 @@ class APITest extends WPTestCase
 	 */
 	public function testInvalidAPICredentials()
 	{
-		$api    = new \ConvertKit_API_V4( $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'], $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'], 'fakeAccessToken', 'fakeRefreshToken' );
+		$api    = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: 'fakeAccessToken',
+			refresh_token: 'fakeRefreshToken'
+		);
 		$result = $api->get_account();
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -579,10 +597,13 @@ class APITest extends WPTestCase
 	 */
 	public function testGetAccessTokenByAPIKeyAndSecret()
 	{
-		$api    = new \ConvertKit_API_V4( $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'], $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
+		$api    = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
+		);
 		$result = $api->get_access_token_by_api_key_and_secret(
-			$_ENV['CONVERTKIT_API_KEY'],
-			$_ENV['CONVERTKIT_API_SECRET']
+			api_key: $_ENV['CONVERTKIT_API_KEY'],
+			api_secret: $_ENV['CONVERTKIT_API_SECRET']
 		);
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
@@ -599,10 +620,13 @@ class APITest extends WPTestCase
 	 */
 	public function testGetAccessTokenByInvalidAPIKeyAndSecret()
 	{
-		$api    = new \ConvertKit_API_V4( $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'], $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
+		$api    = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
+		);
 		$result = $api->get_access_token_by_api_key_and_secret(
-			'invalid-api-key',
-			'invalid-api-secret'
+			api_key: 'invalid-api-key',
+			api_secret: 'invalid-api-secret'
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -616,10 +640,13 @@ class APITest extends WPTestCase
 	 */
 	public function testGetAccessTokenByAPIKeyAndSecretWithInvalidClientID()
 	{
-		$api    = new \ConvertKit_API_V4( 'invalidClientID', $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
+		$api    = new \ConvertKit_API_V4(
+			client_id: 'invalidClientID',
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
+		);
 		$result = $api->get_access_token_by_api_key_and_secret(
-			$_ENV['CONVERTKIT_API_KEY'],
-			$_ENV['CONVERTKIT_API_SECRET']
+			api_key: $_ENV['CONVERTKIT_API_KEY'],
+			api_secret: $_ENV['CONVERTKIT_API_SECRET']
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -632,10 +659,13 @@ class APITest extends WPTestCase
 	 */
 	public function testGetAccessTokenByAPIKeyAndSecretWithBlankClientID()
 	{
-		$api    = new \ConvertKit_API_V4( '', $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
+		$api    = new \ConvertKit_API_V4(
+			client_id: '',
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
+		);
 		$result = $api->get_access_token_by_api_key_and_secret(
-			$_ENV['CONVERTKIT_API_KEY'],
-			$_ENV['CONVERTKIT_API_SECRET']
+			api_key: $_ENV['CONVERTKIT_API_KEY'],
+			api_secret: $_ENV['CONVERTKIT_API_SECRET']
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -648,11 +678,14 @@ class APITest extends WPTestCase
 	 */
 	public function testGetAccessTokenByAPIKeyAndSecretWithTenantName()
 	{
-		$api    = new \ConvertKit_API_V4( $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'], $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
+		$api    = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
+		);
 		$result = $api->get_access_token_by_api_key_and_secret(
-			$_ENV['CONVERTKIT_API_KEY'],
-			$_ENV['CONVERTKIT_API_SECRET'],
-			'https://example.com'
+			api_key: $_ENV['CONVERTKIT_API_KEY'],
+			api_secret: $_ENV['CONVERTKIT_API_SECRET'],
+			tenant_name:'https://example.com'
 		);
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
@@ -709,7 +742,7 @@ class APITest extends WPTestCase
 	public function testUpdateAccountColors()
 	{
 		$result = $this->api->update_account_colors(
-			[
+			colors: [
 				'#111111',
 			]
 		);
