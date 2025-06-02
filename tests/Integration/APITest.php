@@ -834,7 +834,9 @@ class APITest extends WPTestCase
 		$ending = new \DateTime('now');
 
 		// Send request.
-		$result = $this->api->get_growth_stats($starting);
+		$result = $this->api->get_growth_stats(
+			starting: $starting
+		);
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
@@ -869,7 +871,9 @@ class APITest extends WPTestCase
 		$ending->modify('-7 days');
 
 		// Send request.
-		$result = $this->api->get_growth_stats(null, $ending);
+		$result = $this->api->get_growth_stats(
+			ending: $ending
+		);
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
@@ -932,7 +936,9 @@ class APITest extends WPTestCase
 	 */
 	public function testGetFormsWithArchivedStatus()
 	{
-		$result = $this->api->get_forms('archived');
+		$result = $this->api->get_forms(
+			status: 'archived'
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -968,7 +974,10 @@ class APITest extends WPTestCase
 	 */
 	public function testGetFormsWithTotalCount()
 	{
-		$result = $this->api->get_forms('active', true);
+		$result = $this->api->get_forms(
+			status: 'active',
+			include_total_count: true
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -990,7 +999,10 @@ class APITest extends WPTestCase
 	public function testGetFormsPagination()
 	{
 		// Return one form.
-		$result = $this->api->get_forms('active', false, '', '', 1);
+		$result = $this->api->get_forms(
+			status: 'active',
+			per_page: 1
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1004,7 +1016,11 @@ class APITest extends WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch next page.
-		$result = $this->api->get_forms('active', false, $result['pagination']['end_cursor'], '', 1);
+		$result = $this->api->get_forms(
+			status: 'active',
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1018,7 +1034,11 @@ class APITest extends WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
-		$result = $this->api->get_forms('active', false, '', $result['pagination']['start_cursor'], 1);
+		$result = $this->api->get_forms(
+			status: 'active',
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1071,7 +1091,9 @@ class APITest extends WPTestCase
 	 */
 	public function testGetLegacyFormsWithTotalCount()
 	{
-		$result = $this->api->get_legacy_forms(true);
+		$result = $this->api->get_legacy_forms(
+			include_total_count: true
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'legacy_landing_pages');
@@ -1127,7 +1149,9 @@ class APITest extends WPTestCase
 	 */
 	public function testGetLandingPagesWithArchivedStatus()
 	{
-		$result = $this->api->get_forms('archived');
+		$result = $this->api->get_forms(
+			status: 'archived'
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1147,7 +1171,10 @@ class APITest extends WPTestCase
 	 */
 	public function testGetLandingPagesWithTotalCount()
 	{
-		$result = $this->api->get_landing_pages('active', true);
+		$result = $this->api->get_landing_pages(
+			status: 'active',
+			include_total_count: true
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1169,7 +1196,10 @@ class APITest extends WPTestCase
 	public function testGetLandingPagesPagination()
 	{
 		// Return one landing page.
-		$result = $this->api->get_landing_pages('active', false, '', '', 1);
+		$result = $this->api->get_landing_pages(
+			status: 'active',
+			per_page: 1
+		);
 
 		// Assert landing pages and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1183,7 +1213,11 @@ class APITest extends WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch next page.
-		$result = $this->api->get_landing_pages('active', false, $result['pagination']['end_cursor'], '', 1);
+		$result = $this->api->get_landing_pages(
+			status: 'active',
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert landing pages and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1197,7 +1231,11 @@ class APITest extends WPTestCase
 		$this->assertFalse($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
-		$result = $this->api->get_landing_pages('active', false, '', $result['pagination']['start_cursor'], 1);
+		$result = $this->api->get_landing_pages(
+			status: 'active',
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
+		);
 
 		// Assert landing pages and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1250,7 +1288,9 @@ class APITest extends WPTestCase
 	 */
 	public function testGetLegacyLandingPagesWithTotalCount()
 	{
-		$result = $this->api->get_legacy_landing_pages(true);
+		$result = $this->api->get_legacy_landing_pages(
+			include_total_count: true
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'legacy_landing_pages');
@@ -1271,7 +1311,9 @@ class APITest extends WPTestCase
 	 */
 	public function testGetFormSubscriptions()
 	{
-		$result = $this->api->get_form_subscriptions( (int) $_ENV['CONVERTKIT_API_FORM_ID']);
+		$result = $this->api->get_form_subscriptions(
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID']
+		);
 
 		// Assert subscribers and pagination exist.
 		$this->assertDataExists($result, 'subscribers');
@@ -1289,13 +1331,9 @@ class APITest extends WPTestCase
 	public function testGetFormSubscriptionsWithTotalCount()
 	{
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			true // Include total count.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			include_total_count: true
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1319,8 +1357,8 @@ class APITest extends WPTestCase
 	public function testGetFormSubscriptionsWithBouncedSubscriberState()
 	{
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'bounced' // Subscriber state.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'bounced'
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1344,11 +1382,9 @@ class APITest extends WPTestCase
 	{
 		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			$date // Added after.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			added_after: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1375,12 +1411,9 @@ class APITest extends WPTestCase
 	{
 		$date   = new \DateTime('2024-01-01');
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			$date // Added before.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			added_before: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1407,9 +1440,9 @@ class APITest extends WPTestCase
 	{
 		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			$date // Created after.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			created_after: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1436,10 +1469,9 @@ class APITest extends WPTestCase
 	{
 		$date   = new \DateTime('2024-01-01');
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			$date // Created before.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			created_before: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1465,16 +1497,9 @@ class APITest extends WPTestCase
 	public function testGetFormSubscriptionsPagination()
 	{
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			false, // Include total count.
-			'', // After cursor.
-			'', // Before cursor.
-			1 // Per page.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1490,16 +1515,10 @@ class APITest extends WPTestCase
 
 		// Use pagination to fetch next page.
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			false, // Include total count.
-			$result['pagination']['end_cursor'], // After cursor.
-			'', // Before cursor.
-			1 // Per page.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1515,16 +1534,10 @@ class APITest extends WPTestCase
 
 		// Use pagination to fetch previous page.
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			false, // Include total count.
-			'', // After cursor.
-			$result['pagination']['start_cursor'], // Before cursor.
-			1 // Per page.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1558,8 +1571,8 @@ class APITest extends WPTestCase
 	public function testGetFormSubscriptionsWithInvalidSubscriberState()
 	{
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'],
-			'not-a-valid-state'
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'not-a-valid-state'
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -1576,14 +1589,9 @@ class APITest extends WPTestCase
 	public function testGetFormSubscriptionsWithInvalidPagination()
 	{
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			false, // Include total count.
-			'not-a-valid-cursor' // After cursor.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			after_cursor: 'not-a-valid-cursor'
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
