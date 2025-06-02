@@ -5252,7 +5252,7 @@ class APITest extends WPTestCase
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->form_subscribe(
 			form_id: $_ENV['CONVERTKIT_API_FORM_ID'],
-			email_address: $emailAddress,
+			email: $emailAddress,
 			first_name: 'First',
 			fields: [
 				'last_name' => 'Last',
@@ -5281,7 +5281,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->form_subscribe(
 			form_id: 12345,
-			email_address: $this->generateEmailAddress()
+			email: $this->generateEmailAddress()
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -5299,7 +5299,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->form_subscribe(
 			form_id: $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
-			email_address: $this->generateEmailAddress()
+			email: $this->generateEmailAddress()
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -5317,7 +5317,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->form_subscribe(
 			form_id: $_ENV['CONVERTKIT_API_FORM_ID'],
-			email_address: 'not-a-valid-email'
+			email: 'not-a-valid-email'
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -5336,7 +5336,7 @@ class APITest extends WPTestCase
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->legacy_form_subscribe(
 			form_id: $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
-			email_address: $emailAddress,
+			email: $emailAddress,
 			first_name: 'First',
 			fields: [
 				'last_name' => 'Last',
@@ -5365,7 +5365,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->legacy_form_subscribe(
 			form_id: 12345,
-			email_address: $this->generateEmailAddress()
+			email: $this->generateEmailAddress()
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -5383,7 +5383,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->legacy_form_subscribe(
 			form_id: $_ENV['CONVERTKIT_API_FORM_ID'],
-			email_address: $this->generateEmailAddress()
+			email: $this->generateEmailAddress()
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -5401,7 +5401,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->legacy_form_subscribe(
 			form_id: $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
-			email_address: 'not-a-valid-email'
+			email: 'not-a-valid-email'
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -5420,7 +5420,7 @@ class APITest extends WPTestCase
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->tag_subscribe(
 			tag_id: $_ENV['CONVERTKIT_API_TAG_ID'],
-			email_address: $emailAddress,
+			email: $emailAddress,
 			first_name: 'First',
 			fields: [
 				'last_name' => 'Last',
@@ -5449,7 +5449,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->tag_subscribe(
 			tag_id: 12345,
-			email_address: $this->generateEmailAddress()
+			email: $this->generateEmailAddress()
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -5467,7 +5467,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->tag_subscribe(
 			tag_id: $_ENV['CONVERTKIT_API_TAG_ID'],
-			email_address: 'not-a-valid-email'
+			email: 'not-a-valid-email'
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -5486,7 +5486,7 @@ class APITest extends WPTestCase
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->sequence_subscribe(
 			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
-			email_address: $emailAddress,
+			email: $emailAddress,
 			first_name: 'First',
 			fields: [
 				'last_name' => 'Last',
@@ -5515,7 +5515,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->sequence_subscribe(
 			sequence_id: 12345,
-			email_address: $this->generateEmailAddress()
+			email: $this->generateEmailAddress()
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
@@ -5533,7 +5533,7 @@ class APITest extends WPTestCase
 	{
 		$result = $this->api->sequence_subscribe(
 			sequence_id: $_ENV['CONVERTKIT_API_TAG_ID'],
-			email_address: 'not-a-valid-email'
+			email: 'not-a-valid-email'
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
