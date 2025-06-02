@@ -5254,7 +5254,7 @@ class APITest extends WPTestCase
 			form_id: $_ENV['CONVERTKIT_API_FORM_ID'],
 			email: $emailAddress,
 			first_name: 'First',
-			fields: [
+			custom_fields: [
 				'last_name' => 'Last',
 			]
 		);
@@ -5338,7 +5338,7 @@ class APITest extends WPTestCase
 			form_id: $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
 			email: $emailAddress,
 			first_name: 'First',
-			fields: [
+			custom_fields: [
 				'last_name' => 'Last',
 			]
 		);
@@ -5422,7 +5422,7 @@ class APITest extends WPTestCase
 			tag_id: $_ENV['CONVERTKIT_API_TAG_ID'],
 			email: $emailAddress,
 			first_name: 'First',
-			fields: [
+			custom_fields: [
 				'last_name' => 'Last',
 			]
 		);
@@ -5488,7 +5488,7 @@ class APITest extends WPTestCase
 			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
 			email: $emailAddress,
 			first_name: 'First',
-			fields: [
+			custom_fields: [
 				'last_name' => 'Last',
 			]
 		);
