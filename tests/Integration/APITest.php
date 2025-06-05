@@ -1,15 +1,20 @@
 <?php
+
+namespace Tests;
+
+use lucatume\WPBrowser\TestCase\WPTestCase;
+
 /**
  * Tests for the ConvertKit_API class.
  *
- * @since   1.0.0
+ * @since   2.0.0
  */
-class APITest extends \Codeception\TestCase\WPTestCase
+class APITest extends WPTestCase
 {
 	/**
 	 * The testing implementation.
 	 *
-	 * @var \WpunitTester.
+	 * @var \IntegrationTester
 	 */
 	protected $tester;
 
@@ -82,18 +87,18 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		require_once 'src/class-convertkit-log.php';
 
 		// Initialize the classes we want to test.
-		$this->api = new ConvertKit_API_V4(
-			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
-			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
-			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
-			$_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN']
+		$this->api = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
+			refresh_token: $_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN']
 		);
 
-		$this->api_no_data = new ConvertKit_API_V4(
-			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
-			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
-			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN_NO_DATA'],
-			$_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN_NO_DATA']
+		$this->api_no_data = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN_NO_DATA'],
+			refresh_token: $_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN_NO_DATA']
 		);
 
 		// Wait a second to avoid hitting a 429 rate limit.
@@ -139,26 +144,26 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testLog()
 	{
 		// Define location for log file.
-		define( 'CONVERTKIT_PLUGIN_PATH', $_ENV['WP_ROOT_FOLDER'] . '/wp-content/uploads' );
+		define( 'CONVERTKIT_PLUGIN_PATH', $_ENV['WORDPRESS_ROOT_DIR'] . '/wp-content/uploads' );
 
 		// Create a log.txt file.
 		$this->tester->writeToFile(CONVERTKIT_PLUGIN_PATH . '/log.txt', 'historical log file');
 
 		// Initialize API with logging enabled.
-		$api = new ConvertKit_API_V4(
-			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
-			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
-			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
-			$_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN'],
-			true
+		$api = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
+			refresh_token: $_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN'],
+			debug: true
 		);
 
 		// Perform actions that will write sensitive data to the log file.
 		$api->form_subscribe(
-			$_ENV['CONVERTKIT_API_FORM_ID'],
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL'],
-			'First Name',
-			array(
+			form_id: $_ENV['CONVERTKIT_API_FORM_ID'],
+			email: $_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL'],
+			first_name: 'First Name',
+			custom_fields: array(
 				'last_name' => 'Last',
 			)
 		);
@@ -193,14 +198,14 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function test401Unauthorized()
 	{
-		$api    = new ConvertKit_API_V4(
-			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
-			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
-			'not-a-real-access-token',
-			'not-a-real-refresh-token'
+		$api    = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: 'not-a-real-access-token',
+			refresh_token: 'not-a-real-refresh-token'
 		);
 		$result = $api->get_account();
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'The access token is invalid');
 		$this->assertEquals($result->get_error_data($result->get_error_code()), 401);
@@ -215,11 +220,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		// Force WordPress HTTP classes and functions to return a 429 error.
 		$this->mockResponses(
-			429,
-			'Rate limit hit'
+			httpCode: 429,
+			httpMessage: 'Rate limit hit'
 		);
 		$result = $this->api->get_account(); // The API function we use doesn't matter, as mockResponse forces a 429 error.
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'ConvertKit API Error: Rate limit hit.');
 		$this->assertEquals($result->get_error_data($result->get_error_code()), 429);
@@ -233,9 +238,12 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function test500InternalServerError()
 	{
 		// Force WordPress HTTP classes and functions to return a 500 error.
-		$this->mockResponses( 500, 'Internal server error.' );
+		$this->mockResponses(
+			httpCode: 500,
+			httpMessage: 'Internal server error.'
+		);
 		$result = $this->api->get_account(); // The API function we use doesn't matter, as mockResponse forces a 500 error.
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'ConvertKit API Error: Internal server error.');
 		$this->assertEquals($result->get_error_data($result->get_error_code()), 500);
@@ -249,9 +257,12 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function test502BadGateway()
 	{
 		// Force WordPress HTTP classes and functions to return a 502 error.
-		$this->mockResponses( 502, 'Bad gateway.' );
+		$this->mockResponses(
+			httpCode: 502,
+			httpMessage: 'Bad gateway.'
+		);
 		$result = $this->api->get_account(); // The API function we use doesn't matter, as mockResponse forces a 502 error.
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'ConvertKit API Error: Bad gateway.');
 		$this->assertEquals($result->get_error_data($result->get_error_code()), 502);
@@ -277,13 +288,13 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		);
 
 		// Perform a request.
-		$api    = new ConvertKit_API_V4(
-			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
-			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
-			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
-			$_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN'],
-			false,
-			'TestContext'
+		$api    = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
+			refresh_token: $_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN'],
+			debug: false,
+			context: 'TestContext'
 		);
 		$result = $api->get_account();
 	}
@@ -414,13 +425,17 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		);
 
 		// Mock the API response.
-		$this->mockResponses( 200, 'OK', wp_json_encode( $params ) );
+		$this->mockResponses(
+			httpCode: 200,
+			httpMessage: 'OK',
+			body: wp_json_encode( $params )
+		);
 
 		// Send request.
 		$result = $this->api->get_access_token( 'auth-code' );
 
 		// Inspect response.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('access_token', $result);
 		$this->assertArrayHasKey('refresh_token', $result);
@@ -444,7 +459,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetAccessTokenWithInvalidAuthCode()
 	{
 		$result = $this->api->get_access_token( 'not-a-real-auth-code' );
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), 'convertkit_api_error');
 	}
 
@@ -461,9 +476,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		// access and refresh token being provided, which would result in
 		// other tests breaking due to changed tokens.
 		$this->mockResponses(
-			200,
-			'OK',
-			wp_json_encode(
+			httpCode: 200,
+			httpMessage: 'OK',
+			body: wp_json_encode(
 				array(
 					'access_token'  => $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
 					'refresh_token' => $_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN'],
@@ -479,7 +494,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$result = $this->api->refresh_token();
 
 		// Inspect response.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('access_token', $result);
 		$this->assertArrayHasKey('refresh_token', $result);
@@ -501,15 +516,15 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testRefreshTokenWithInvalidToken()
 	{
 		// Setup API.
-		$api = new ConvertKit_API_V4(
-			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
-			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
-			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
-			'not-a-real-refresh-token'
+		$api = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
+			refresh_token: 'not-a-real-refresh-token'
 		);
 
 		$result = $api->refresh_token();
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), 'convertkit_api_error');
 	}
 
@@ -546,9 +561,12 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testNoAPICredentials()
 	{
-		$api    = new ConvertKit_API_V4( $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'], $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
+		$api    = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
+		);
 		$result = $api->get_account();
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'Authentication Failed');
 	}
@@ -560,9 +578,14 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testInvalidAPICredentials()
 	{
-		$api    = new ConvertKit_API_V4( $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'], $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'], 'fakeAccessToken', 'fakeRefreshToken' );
+		$api    = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			access_token: 'fakeAccessToken',
+			refresh_token: 'fakeRefreshToken'
+		);
 		$result = $api->get_account();
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'The access token is invalid');
 	}
@@ -574,12 +597,15 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetAccessTokenByAPIKeyAndSecret()
 	{
-		$api    = new ConvertKit_API_V4( $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'], $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
-		$result = $api->get_access_token_by_api_key_and_secret(
-			$_ENV['CONVERTKIT_API_KEY'],
-			$_ENV['CONVERTKIT_API_SECRET']
+		$api    = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$result = $api->get_access_token_by_api_key_and_secret(
+			api_key: $_ENV['CONVERTKIT_API_KEY'],
+			api_secret: $_ENV['CONVERTKIT_API_SECRET']
+		);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('oauth', $result);
 		$this->assertArrayHasKey('access_token', $result['oauth']);
@@ -594,12 +620,15 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetAccessTokenByInvalidAPIKeyAndSecret()
 	{
-		$api    = new ConvertKit_API_V4( $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'], $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
-		$result = $api->get_access_token_by_api_key_and_secret(
-			'invalid-api-key',
-			'invalid-api-secret'
+		$api    = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$result = $api->get_access_token_by_api_key_and_secret(
+			api_key: 'invalid-api-key',
+			api_secret: 'invalid-api-secret'
+		);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals('Authorization Failed: API Secret not valid', $result->get_error_message());
 	}
@@ -611,12 +640,15 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetAccessTokenByAPIKeyAndSecretWithInvalidClientID()
 	{
-		$api    = new ConvertKit_API_V4( 'invalidClientID', $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
-		$result = $api->get_access_token_by_api_key_and_secret(
-			$_ENV['CONVERTKIT_API_KEY'],
-			$_ENV['CONVERTKIT_API_SECRET']
+		$api    = new \ConvertKit_API_V4(
+			client_id: 'invalidClientID',
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$result = $api->get_access_token_by_api_key_and_secret(
+			api_key: $_ENV['CONVERTKIT_API_KEY'],
+			api_secret: $_ENV['CONVERTKIT_API_SECRET']
+		);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -627,12 +659,15 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetAccessTokenByAPIKeyAndSecretWithBlankClientID()
 	{
-		$api    = new ConvertKit_API_V4( '', $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
-		$result = $api->get_access_token_by_api_key_and_secret(
-			$_ENV['CONVERTKIT_API_KEY'],
-			$_ENV['CONVERTKIT_API_SECRET']
+		$api    = new \ConvertKit_API_V4(
+			client_id: '',
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$result = $api->get_access_token_by_api_key_and_secret(
+			api_key: $_ENV['CONVERTKIT_API_KEY'],
+			api_secret: $_ENV['CONVERTKIT_API_SECRET']
+		);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -643,13 +678,16 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetAccessTokenByAPIKeyAndSecretWithTenantName()
 	{
-		$api    = new ConvertKit_API_V4( $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'], $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'] );
-		$result = $api->get_access_token_by_api_key_and_secret(
-			$_ENV['CONVERTKIT_API_KEY'],
-			$_ENV['CONVERTKIT_API_SECRET'],
-			'https://example.com'
+		$api    = new \ConvertKit_API_V4(
+			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$result = $api->get_access_token_by_api_key_and_secret(
+			api_key: $_ENV['CONVERTKIT_API_KEY'],
+			api_secret: $_ENV['CONVERTKIT_API_SECRET'],
+			tenant_name:'https://example.com'
+		);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('oauth', $result);
 		$this->assertArrayHasKey('access_token', $result['oauth']);
@@ -665,7 +703,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetAccount()
 	{
 		$result = $this->api->get_account();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		$this->assertArrayHasKey('user', $result);
@@ -687,7 +725,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetAccountColors()
 	{
 		$result = $this->api->get_account_colors();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		$this->assertArrayHasKey('colors', $result);
@@ -704,11 +742,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testUpdateAccountColors()
 	{
 		$result = $this->api->update_account_colors(
-			[
+			colors: [
 				'#111111',
 			]
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		$this->assertArrayHasKey('colors', $result);
@@ -726,7 +764,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetCreatorProfile()
 	{
 		$result = $this->api->get_creator_profile();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		$this->assertArrayHasKey('name', $result['profile']);
@@ -746,7 +784,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetEmailStats()
 	{
 		$result = $this->api->get_email_stats();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		$this->assertArrayHasKey('sent', $result['stats']);
@@ -769,7 +807,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetGrowthStats()
 	{
 		$result = $this->api->get_growth_stats();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		$this->assertArrayHasKey('cancellations', $result['stats']);
@@ -791,13 +829,15 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetGrowthStatsWithStartDate()
 	{
 		// Define start and end dates.
-		$starting = new DateTime('now');
+		$starting = new \DateTime('now');
 		$starting->modify('-7 days');
-		$ending = new DateTime('now');
+		$ending = new \DateTime('now');
 
 		// Send request.
-		$result = $this->api->get_growth_stats($starting);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$result = $this->api->get_growth_stats(
+			starting: $starting
+		);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Confirm response object contains expected keys.
@@ -809,7 +849,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertArrayHasKey('ending', $result['stats']);
 
 		// Assert start and end dates were honored.
-		$timezone = ( new DateTime() )->setTimezone(new DateTimeZone('America/New_York'))->format('P'); // Gets timezone offset for New York (-04:00 during DST, -05:00 otherwise).
+		$timezone = ( new \DateTime() )->setTimezone(new \DateTimeZone('America/New_York'))->format('P'); // Gets timezone offset for New York (-04:00 during DST, -05:00 otherwise).
 		$this->assertEquals($result['stats']['starting'], $starting->format('Y-m-d') . 'T00:00:00' . $timezone);
 		$this->assertEquals($result['stats']['ending'], $ending->format('Y-m-d') . 'T23:59:59' . $timezone);
 	}
@@ -825,14 +865,16 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetGrowthStatsWithEndDate()
 	{
 		// Define start and end dates.
-		$starting = new DateTime('now');
+		$starting = new \DateTime('now');
 		$starting->modify('-90 days');
-		$ending = new DateTime('now');
+		$ending = new \DateTime('now');
 		$ending->modify('-7 days');
 
 		// Send request.
-		$result = $this->api->get_growth_stats(null, $ending);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$result = $this->api->get_growth_stats(
+			ending: $ending
+		);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Confirm response object contains expected keys.
@@ -844,7 +886,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertArrayHasKey('ending', $result['stats']);
 
 		// Assert start and end dates were honored.
-		$timezone = ( new DateTime() )->setTimezone(new DateTimeZone('America/New_York'))->format('P'); // Gets timezone offset for New York (-04:00 during DST, -05:00 otherwise).
+		$timezone = ( new \DateTime() )->setTimezone(new \DateTimeZone('America/New_York'))->format('P'); // Gets timezone offset for New York (-04:00 during DST, -05:00 otherwise).
 		$this->assertEquals($result['stats']['starting'], $starting->format('Y-m-d') . 'T00:00:00' . $timezone);
 		$this->assertEquals($result['stats']['ending'], $ending->format('Y-m-d') . 'T23:59:59' . $timezone);
 	}
@@ -894,7 +936,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetFormsWithArchivedStatus()
 	{
-		$result = $this->api->get_forms('archived');
+		$result = $this->api->get_forms(
+			status: 'archived'
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -930,7 +974,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetFormsWithTotalCount()
 	{
-		$result = $this->api->get_forms('active', true);
+		$result = $this->api->get_forms(
+			status: 'active',
+			include_total_count: true
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -952,7 +999,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetFormsPagination()
 	{
 		// Return one form.
-		$result = $this->api->get_forms('active', false, '', '', 1);
+		$result = $this->api->get_forms(
+			status: 'active',
+			per_page: 1
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -966,7 +1016,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch next page.
-		$result = $this->api->get_forms('active', false, $result['pagination']['end_cursor'], '', 1);
+		$result = $this->api->get_forms(
+			status: 'active',
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -980,7 +1034,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
-		$result = $this->api->get_forms('active', false, '', $result['pagination']['start_cursor'], 1);
+		$result = $this->api->get_forms(
+			status: 'active',
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1033,7 +1091,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetLegacyFormsWithTotalCount()
 	{
-		$result = $this->api->get_legacy_forms(true);
+		$result = $this->api->get_legacy_forms(
+			include_total_count: true
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'legacy_landing_pages');
@@ -1089,7 +1149,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetLandingPagesWithArchivedStatus()
 	{
-		$result = $this->api->get_forms('archived');
+		$result = $this->api->get_forms(
+			status: 'archived'
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1109,7 +1171,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetLandingPagesWithTotalCount()
 	{
-		$result = $this->api->get_landing_pages('active', true);
+		$result = $this->api->get_landing_pages(
+			status: 'active',
+			include_total_count: true
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1131,7 +1196,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetLandingPagesPagination()
 	{
 		// Return one landing page.
-		$result = $this->api->get_landing_pages('active', false, '', '', 1);
+		$result = $this->api->get_landing_pages(
+			status: 'active',
+			per_page: 1
+		);
 
 		// Assert landing pages and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1145,7 +1213,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch next page.
-		$result = $this->api->get_landing_pages('active', false, $result['pagination']['end_cursor'], '', 1);
+		$result = $this->api->get_landing_pages(
+			status: 'active',
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert landing pages and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1159,7 +1231,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertFalse($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
-		$result = $this->api->get_landing_pages('active', false, '', $result['pagination']['start_cursor'], 1);
+		$result = $this->api->get_landing_pages(
+			status: 'active',
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
+		);
 
 		// Assert landing pages and pagination exist.
 		$this->assertDataExists($result, 'forms');
@@ -1212,7 +1288,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetLegacyLandingPagesWithTotalCount()
 	{
-		$result = $this->api->get_legacy_landing_pages(true);
+		$result = $this->api->get_legacy_landing_pages(
+			include_total_count: true
+		);
 
 		// Assert forms and pagination exist.
 		$this->assertDataExists($result, 'legacy_landing_pages');
@@ -1233,7 +1311,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetFormSubscriptions()
 	{
-		$result = $this->api->get_form_subscriptions( (int) $_ENV['CONVERTKIT_API_FORM_ID']);
+		$result = $this->api->get_form_subscriptions(
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID']
+		);
 
 		// Assert subscribers and pagination exist.
 		$this->assertDataExists($result, 'subscribers');
@@ -1251,13 +1331,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetFormSubscriptionsWithTotalCount()
 	{
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			true // Include total count.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			include_total_count: true
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1281,8 +1357,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetFormSubscriptionsWithBouncedSubscriberState()
 	{
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'bounced' // Subscriber state.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'bounced'
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1306,11 +1382,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			$date // Added after.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			added_after: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1337,12 +1411,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2024-01-01');
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			$date, // Added before.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			added_before: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1369,9 +1440,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			$date // Created after.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			created_after: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1398,10 +1469,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2024-01-01');
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			$date // Created before.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			created_before: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1427,16 +1497,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetFormSubscriptionsPagination()
 	{
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			false, // Include total count.
-			'', // After cursor.
-			'', // Before cursor.
-			1, // Per page.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1452,16 +1515,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Use pagination to fetch next page.
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			false, // Include total count.
-			$result['pagination']['end_cursor'], // After cursor.
-			'', // Before cursor.
-			1, // Per page.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1477,16 +1534,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Use pagination to fetch previous page.
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			false, // Include total count.
-			'', // After cursor.
-			$result['pagination']['start_cursor'], // Before cursor.
-			1, // Per page.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1505,7 +1556,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetFormSubscriptionsWithInvalidFormID()
 	{
 		$result = $this->api->get_form_subscriptions(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -1520,10 +1571,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetFormSubscriptionsWithInvalidSubscriberState()
 	{
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'],
-			'not-a-valid-state'
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'not-a-valid-state'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -1538,16 +1589,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetFormSubscriptionsWithInvalidPagination()
 	{
 		$result = $this->api->get_form_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'], // Form ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			false, // Include total count.
-			'not-a-valid-cursor' // After cursor.
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_state: 'active',
+			after_cursor: 'not-a-valid-cursor'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -1563,7 +1609,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		// Create subscriber.
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->create_subscriber($emailAddress);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -1571,10 +1617,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Add subscriber to form.
 		$result = $this->api->add_subscriber_to_form_by_email(
-			$_ENV['CONVERTKIT_API_FORM_ID'],
-			$emailAddress
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			email_address: $emailAddress
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('subscriber', $result);
 		$this->assertArrayHasKey('id', $result['subscriber']);
@@ -1603,12 +1649,12 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Add subscriber to form.
 		$result = $this->api->add_subscriber_to_form_by_email(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'],
-			$emailAddress,
-			'https://mywebsite.com/bfpromo/',
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			email_address: $emailAddress,
+			referrer: 'https://mywebsite.com/bfpromo/'
 		);
 
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('subscriber', $result);
 		$this->assertArrayHasKey('id', $result['subscriber']);
@@ -1653,12 +1699,12 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Add subscriber to form.
 		$result = $this->api->add_subscriber_to_form_by_email(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'],
-			$emailAddress,
-			$referrer,
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			email_address: $emailAddress,
+			referrer: $referrer
 		);
 
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('subscriber', $result);
 		$this->assertArrayHasKey('id', $result['subscriber']);
@@ -1705,10 +1751,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToFormByEmailWithInvalidformID()
 	{
 		$result = $this->api->add_subscriber_to_form_by_email(
-			12345,
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL']
+			form_id: 12345,
+			email_address: $_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -1723,10 +1769,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToFormByEmailWithInvalidEmailAddress()
 	{
 		$result = $this->api->add_subscriber_to_form_by_email(
-			$_ENV['CONVERTKIT_API_FORM_ID'],
-			'not-an-email-address'
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			email_address: 'not-an-email-address'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -1740,11 +1786,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToForm()
 	{
 		// Create subscriber.
-		$subscriber = $this->api->create_subscriber(
-			$this->generateEmailAddress()
-		);
+		$subscriber = $this->api->create_subscriber($this->generateEmailAddress());
 
-		$this->assertNotInstanceOf(WP_Error::class, $subscriber);
+		$this->assertNotInstanceOf(\WP_Error::class, $subscriber);
 		$this->assertIsArray($subscriber);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -1752,10 +1796,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Add subscriber to form.
 		$result = $this->api->add_subscriber_to_form(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'],
-			$subscriber['subscriber']['id']
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_id: $subscriber['subscriber']['id']
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('subscriber', $result);
 		$this->assertArrayHasKey('id', $result['subscriber']);
@@ -1781,12 +1825,12 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Add subscriber to form.
 		$result = $this->api->add_subscriber_to_form(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'],
-			$subscriber['subscriber']['id'],
-			'https://mywebsite.com/bfpromo/',
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_id: $subscriber['subscriber']['id'],
+			referrer: 'https://mywebsite.com/bfpromo/'
 		);
 
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('subscriber', $result);
 		$this->assertArrayHasKey('id', $result['subscriber']);
@@ -1831,12 +1875,12 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Add subscriber to form.
 		$result = $this->api->add_subscriber_to_form(
-			(int) $_ENV['CONVERTKIT_API_FORM_ID'],
-			$subscriber['subscriber']['id'],
-			$referrer,
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_id: $subscriber['subscriber']['id'],
+			referrer: $referrer
 		);
 
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('subscriber', $result);
 		$this->assertArrayHasKey('id', $result['subscriber']);
@@ -1883,10 +1927,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToFormWithInvalidFormID()
 	{
 		$result = $this->api->add_subscriber_to_form(
-			12345,
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_ID']
+			form_id: 12345,
+			subscriber_id: $_ENV['CONVERTKIT_API_SUBSCRIBER_ID']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -1901,10 +1945,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToFormWithLegacyFormID()
 	{
 		$result = $this->api->add_subscriber_to_form(
-			$_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_ID']
+			form_id: $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
+			subscriber_id: $_ENV['CONVERTKIT_API_SUBSCRIBER_ID']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -1919,10 +1963,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToformWithInvalidSubscriberID()
 	{
 		$result = $this->api->add_subscriber_to_form(
-			$_ENV['CONVERTKIT_API_FORM_ID'],
-			12345
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_id: 12345
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -1936,11 +1980,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToLegacyForm()
 	{
 		// Create subscriber.
-		$subscriber = $this->api->create_subscriber(
-			$this->generateEmailAddress()
-		);
+		$subscriber = $this->api->create_subscriber($this->generateEmailAddress());
 
-		$this->assertNotInstanceOf(WP_Error::class, $subscriber);
+		$this->assertNotInstanceOf(\WP_Error::class, $subscriber);
 		$this->assertIsArray($subscriber);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -1948,10 +1990,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Add subscriber to legacy form.
 		$result = $this->api->add_subscriber_to_legacy_form(
-			(int) $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
-			$subscriber['subscriber']['id']
+			form_id: (int) $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
+			subscriber_id: $subscriber['subscriber']['id']
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('subscriber', $result);
 		$this->assertArrayHasKey('id', $result['subscriber']);
@@ -1969,10 +2011,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToLegacyFormWithInvalidFormID()
 	{
 		$result = $this->api->add_subscriber_to_legacy_form(
-			12345,
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_ID']
+			form_id: 12345,
+			subscriber_id: $_ENV['CONVERTKIT_API_SUBSCRIBER_ID']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -1987,10 +2029,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToLegacyFormWithNonLegacyFormID()
 	{
 		$result = $this->api->add_subscriber_to_legacy_form(
-			$_ENV['CONVERTKIT_API_FORM_ID'],
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_ID']
+			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
+			subscriber_id: $_ENV['CONVERTKIT_API_SUBSCRIBER_ID']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2005,10 +2047,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToLegacyFormWithInvalidSubscriberID()
 	{
 		$result = $this->api->add_subscriber_to_legacy_form(
-			$_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
-			12345
+			form_id: (int) $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
+			subscriber_id: 12345
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2046,7 +2088,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetSequencesWithTotalCount()
 	{
-		$result = $this->api->get_sequences(true);
+		$result = $this->api->get_sequences(
+			include_total_count: true
+		);
 
 		// Assert sequences and pagination exist.
 		$this->assertDataExists($result, 'sequences');
@@ -2068,7 +2112,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSequencesPagination()
 	{
 		// Return one sequence.
-		$result = $this->api->get_sequences(false, '', '', 1);
+		$result = $this->api->get_sequences(
+			per_page: 1
+		);
 
 		// Assert sequences and pagination exist.
 		$this->assertDataExists($result, 'sequences');
@@ -2082,7 +2128,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch next page.
-		$result = $this->api->get_sequences(false, $result['pagination']['end_cursor'], '', 1);
+		$result = $this->api->get_sequences(
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert sequences and pagination exist.
 		$this->assertDataExists($result, 'sequences');
@@ -2096,7 +2145,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertFalse($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
-		$result = $this->api->get_sequences(false, '', $result['pagination']['start_cursor'], 1);
+		$result = $this->api->get_sequences(
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
+		);
 
 		// Assert sequences and pagination exist.
 		$this->assertDataExists($result, 'sequences');
@@ -2122,7 +2174,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		// Create subscriber.
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->create_subscriber($emailAddress);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -2130,10 +2182,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Add subscriber to sequence.
 		$result = $this->api->add_subscriber_to_sequence_by_email(
-			$_ENV['CONVERTKIT_API_SEQUENCE_ID'],
-			$emailAddress
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			email_address: $emailAddress
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('subscriber', $result);
 		$this->assertArrayHasKey('id', $result['subscriber']);
@@ -2154,10 +2206,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToSequenceByEmailWithInvalidSequenceID()
 	{
 		$result = $this->api->add_subscriber_to_sequence_by_email(
-			12345,
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL']
+			sequence_id: 12345,
+			email_address: $_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2172,10 +2224,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToSequenceByEmailWithInvalidEmailAddress()
 	{
 		$result = $this->api->add_subscriber_to_sequence_by_email(
-			$_ENV['CONVERTKIT_API_SEQUENCE_ID'],
-			'not-an-email-address'
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			email_address: 'not-an-email-address'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2189,11 +2241,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToSequence()
 	{
 		// Create subscriber.
-		$subscriber = $this->api->create_subscriber(
-			$this->generateEmailAddress()
-		);
+		$subscriber = $this->api->create_subscriber($this->generateEmailAddress());
 
-		$this->assertNotInstanceOf(WP_Error::class, $subscriber);
+		$this->assertNotInstanceOf(\WP_Error::class, $subscriber);
 		$this->assertIsArray($subscriber);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -2201,10 +2251,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Add subscriber to sequence.
 		$result = $this->api->add_subscriber_to_sequence(
-			(int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
-			$subscriber['subscriber']['id']
+			sequence_id: (int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			subscriber_id: $subscriber['subscriber']['id']
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('subscriber', $result);
 		$this->assertArrayHasKey('id', $result['subscriber']);
@@ -2222,10 +2272,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToSequenceWithInvalidSequenceID()
 	{
 		$result = $this->api->add_subscriber_to_sequence(
-			12345,
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_ID']
+			sequence_id: 12345,
+			subscriber_id: $_ENV['CONVERTKIT_API_SUBSCRIBER_ID']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2240,10 +2290,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testAddSubscriberToSequenceWithInvalidSubscriberID()
 	{
 		$result = $this->api->add_subscriber_to_sequence(
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_ID'],
-			12345
+			sequence_id: $_ENV['CONVERTKIT_API_SUBSCRIBER_ID'],
+			subscriber_id: 12345
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2256,7 +2306,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetSequenceSubscriptions()
 	{
-		$result = $this->api->get_sequence_subscriptions($_ENV['CONVERTKIT_API_SEQUENCE_ID']);
+		$result = $this->api->get_sequence_subscriptions(
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID']
+		);
 
 		// Assert subscribers and pagination exist.
 		$this->assertDataExists($result, 'subscribers');
@@ -2274,13 +2326,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSequenceSubscriptionsWithTotalCount()
 	{
 		$result = $this->api->get_sequence_subscriptions(
-			$_ENV['CONVERTKIT_API_SEQUENCE_ID'], // Sequence ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			true // Include total count.
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			subscriber_state: 'active',
+			include_total_count: true
 		);
 
 		// Assert subscribers and pagination exist.
@@ -2304,8 +2352,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSequenceSubscriptionsWithBouncedSubscriberState()
 	{
 		$result = $this->api->get_sequence_subscriptions(
-			$_ENV['CONVERTKIT_API_SEQUENCE_ID'], // Sequence ID.
-			'bounced' // Subscriber state.
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			subscriber_state: 'bounced'
 		);
 
 		// Assert subscribers and pagination exist.
@@ -2329,11 +2377,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_sequence_subscriptions(
-			$_ENV['CONVERTKIT_API_SEQUENCE_ID'], // Sequence ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			$date // Added after.
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			subscriber_state: 'active',
+			added_after: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -2360,12 +2406,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2024-01-01');
 		$result = $this->api->get_sequence_subscriptions(
-			$_ENV['CONVERTKIT_API_SEQUENCE_ID'], // Sequence ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			$date // Added before.
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			subscriber_state: 'active',
+			added_before: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -2392,9 +2435,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_sequence_subscriptions(
-			$_ENV['CONVERTKIT_API_SEQUENCE_ID'], // Sequence ID.
-			'active', // Subscriber state.
-			$date // Created after.
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			subscriber_state: 'active',
+			created_after: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -2421,10 +2464,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2024-01-01');
 		$result = $this->api->get_sequence_subscriptions(
-			$_ENV['CONVERTKIT_API_SEQUENCE_ID'], // Sequence ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			$date // Created before.
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			subscriber_state: 'active',
+			created_before: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -2450,16 +2492,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSequenceSubscriptionsPagination()
 	{
 		$result = $this->api->get_sequence_subscriptions(
-			$_ENV['CONVERTKIT_API_SEQUENCE_ID'], // Sequence ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			false, // Include total count.
-			'', // After cursor.
-			'', // Before cursor.
-			1 // Per page.
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			subscriber_state: 'active',
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -2475,16 +2510,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Use pagination to fetch next page.
 		$result = $this->api->get_sequence_subscriptions(
-			$_ENV['CONVERTKIT_API_SEQUENCE_ID'], // Sequence ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			false, // Include total count.
-			$result['pagination']['end_cursor'], // After cursor.
-			'', // Before cursor.
-			1 // Per page.
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			subscriber_state: 'active',
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -2496,20 +2525,14 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Assert has_previous_page and has_next_page are correct.
 		$this->assertTrue($result['pagination']['has_previous_page']);
-		$this->assertFalse($result['pagination']['has_next_page']);
+		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
 		$result = $this->api->get_sequence_subscriptions(
-			$_ENV['CONVERTKIT_API_SEQUENCE_ID'], // Sequence ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Added after.
-			null, // Added before.
-			false, // Include total count.
-			'', // After cursor.
-			$result['pagination']['start_cursor'], // Before cursor.
-			1 // Per page.
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			subscriber_state: 'active',
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -2528,7 +2551,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSequenceSubscriptionsWithInvalidSequenceID()
 	{
 		$result = $this->api->get_sequence_subscriptions(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2543,10 +2566,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSequenceSubscriptionsWithInvalidSubscriberState()
 	{
 		$result = $this->api->get_sequence_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
-			'not-a-valid-state'
+			sequence_id: (int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			subscriber_state: 'not-a-valid-state'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2561,10 +2584,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSequenceSubscriptionsWithInvalidPagination()
 	{
 		$result = $this->api->get_sequence_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
-			'not-a-valid-cursor'
+			sequence_id: (int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			after_cursor: 'not-a-valid-cursor'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2621,7 +2644,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetTagsPagination()
 	{
-		$result = $this->api->get_tags(false, '', '', 1);
+		$result = $this->api->get_tags(
+			per_page: 1
+		);
 
 		// Assert tags and pagination exist.
 		$this->assertDataExists($result, 'tags');
@@ -2635,7 +2660,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch next page.
-		$result = $this->api->get_tags(false, $result['pagination']['end_cursor'], '', 1);
+		$result = $this->api->get_tags(
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert tags and pagination exist.
 		$this->assertDataExists($result, 'tags');
@@ -2649,7 +2677,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
-		$result = $this->api->get_tags(false, '', $result['pagination']['start_cursor'], 1);
+		$result = $this->api->get_tags(
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
+		);
 
 		// Assert tags and pagination exist.
 		$this->assertDataExists($result, 'tags');
@@ -2704,7 +2735,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testCreateTagBlank()
 	{
 		$result = $this->api->create_tag('');
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2830,8 +2861,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Tag subscriber by email.
 		$subscriber = $this->api->tag_subscriber_by_email(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			$emailAddress,
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			email_address: $emailAddress
 		);
 		$this->assertArrayHasKey('subscriber', $subscriber);
 		$this->assertArrayHasKey('id', $subscriber['subscriber']);
@@ -2863,10 +2894,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->api->create_subscriber($emailAddress);
 
 		$result = $this->api->tag_subscriber_by_email(
-			12345,
-			$emailAddress
+			tag_id: 12345,
+			email_address: $emailAddress
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2881,10 +2912,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testTagSubscriberByEmailWithInvalidEmailAddress()
 	{
 		$result = $this->api->tag_subscriber_by_email(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			'not-an-email-address'
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			email_address: 'not-an-email-address'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2903,8 +2934,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Tag subscriber by email.
 		$result = $this->api->tag_subscriber(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			$subscriber['subscriber']['id'],
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_id: $subscriber['subscriber']['id']
 		);
 		$this->assertArrayHasKey('subscriber', $result);
 		$this->assertArrayHasKey('id', $result['subscriber']);
@@ -2936,10 +2967,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$subscriber   = $this->api->create_subscriber($emailAddress);
 
 		$result = $this->api->tag_subscriber(
-			12345,
-			$subscriber['subscriber']['id']
+			tag_id: 12345,
+			subscriber_id: $subscriber['subscriber']['id']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2954,10 +2985,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testTagSubscriberWithInvalidSubscriberID()
 	{
 		$result = $this->api->tag_subscriber(
-			$_ENV['CONVERTKIT_API_TAG_ID'],
-			12345
+			tag_id: $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_id: 12345
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -2976,14 +3007,14 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Tag subscriber by email.
 		$subscriber = $this->api->tag_subscriber_by_email(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			$emailAddress,
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			email_address: $emailAddress
 		);
 
 		// Remove tag from subscriber.
 		$result = $this->api->remove_tag_from_subscriber(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			$subscriber['subscriber']['id']
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_id: $subscriber['subscriber']['id']
 		);
 
 		// Confirm that the subscriber no longer has the tag.
@@ -3008,16 +3039,16 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Tag subscriber by email.
 		$subscriber = $this->api->tag_subscriber_by_email(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			$emailAddress,
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			email_address: $emailAddress
 		);
 
 		// Remove tag from subscriber.
 		$result = $this->api->remove_tag_from_subscriber(
-			12345,
-			$subscriber['subscriber']['id']
+			tag_id: 12345,
+			subscriber_id: $subscriber['subscriber']['id']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -3032,10 +3063,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testRemoveTagFromSubscriberWithInvalidSubscriberID()
 	{
 		$result = $this->api->remove_tag_from_subscriber(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			12345
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_id: 12345
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -3054,14 +3085,14 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Tag subscriber by email.
 		$subscriber = $this->api->tag_subscriber_by_email(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			$emailAddress,
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			email_address: $emailAddress
 		);
 
 		// Remove tag from subscriber.
 		$result = $this->api->remove_tag_from_subscriber(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			$subscriber['subscriber']['id']
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_id: $subscriber['subscriber']['id']
 		);
 
 		// Confirm that the subscriber no longer has the tag.
@@ -3081,10 +3112,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testRemoveTagFromSubscriberByEmailWithInvalidTagID()
 	{
 		$result = $this->api->remove_tag_from_subscriber_by_email(
-			12345,
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL']
+			tag_id: 12345,
+			email_address: $_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -3099,10 +3130,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testRemoveTagFromSubscriberByEmailWithInvalidEmailAddress()
 	{
 		$result = $this->api->remove_tag_from_subscriber_by_email(
-			$_ENV['CONVERTKIT_API_TAG_ID'],
-			'not-an-email-address'
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			email_address: 'not-an-email-address'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -3134,13 +3165,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetTagSubscriptionsWithTotalCount()
 	{
 		$result = $this->api->get_tag_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'], // Tag ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Tagged after.
-			null, // Tagged before.
-			true // Include total count.
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_state: 'active',
+			include_total_count: true
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3164,8 +3191,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetTagSubscriptionsWithBouncedSubscriberState()
 	{
 		$result = $this->api->get_tag_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'], // Tag ID.
-			'bounced' // Subscriber state.
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_state: 'bounced'
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3190,11 +3217,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_tag_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'], // Tag ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			$date // Tagged after.
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_state: 'active',
+			tagged_after: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3221,12 +3246,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2024-01-01');
 		$result = $this->api->get_tag_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'], // Tag ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Tagged after.
-			$date // Tagged before.
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_state: 'active',
+			tagged_before: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3253,9 +3275,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_tag_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'], // Tag ID.
-			'active', // Subscriber state.
-			$date // Created after.
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_state: 'active',
+			created_after: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3282,10 +3304,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2024-01-01');
 		$result = $this->api->get_tag_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'], // Tag ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			$date // Created before.
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_state: 'active',
+			created_before: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3311,16 +3332,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetTagSubscriptionsPagination()
 	{
 		$result = $this->api->get_tag_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'], // Tag ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Tagged after.
-			null, // Tagged before.
-			false, // Include total count.
-			'', // After cursor.
-			'', // Before cursor.
-			1 // Per page.
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_state: 'active',
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3336,16 +3350,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Use pagination to fetch next page.
 		$result = $this->api->get_tag_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'], // Tag ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Tagged after.
-			null, // Tagged before.
-			false, // Include total count.
-			$result['pagination']['end_cursor'], // After cursor.
-			'', // Before cursor.
-			1 // Per page.
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_state: 'active',
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3361,16 +3369,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Use pagination to fetch previous page.
 		$result = $this->api->get_tag_subscriptions(
-			(int) $_ENV['CONVERTKIT_API_TAG_ID'], // Tag ID.
-			'active', // Subscriber state.
-			null, // Created after.
-			null, // Created before.
-			null, // Tagged after.
-			null, // Tagged before.
-			false, // Include total count.
-			'', // After cursor.
-			$result['pagination']['start_cursor'], // Before cursor.
-			1 // Per page.
+			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
+			subscriber_state: 'active',
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3389,7 +3391,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetTagSubscriptionsWithInvalidTagID()
 	{
 		$result = $this->api->get_tag_subscriptions(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -3420,18 +3422,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscribersWithTotalCount()
 	{
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			null, // Created after.
-			null, // Created before.
-			null, // Updated after.
-			null, // Updated before.
-			'id', // Sort field.
-			'desc', // Sort order.
-			true, // Include total count.
-			'', // After cursor.
-			'', // Before cursor.
-			100 // Per page.
+			include_total_count: true
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3454,18 +3445,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscribersByEmailAddress()
 	{
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL'], // Email address.
-			null, // Created after.
-			null, // Created before.
-			null, // Updated after.
-			null, // Updated before.
-			'id', // Sort field.
-			'desc', // Sort order.
-			false, // Include total count.
-			'', // After cursor.
-			'', // Before cursor.
-			100 // Per page.
+			email_address: $_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL']
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3490,7 +3470,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscribersWithBouncedSubscriberState()
 	{
 		$result = $this->api->get_subscribers(
-			'bounced' // Subscriber state.
+			subscriber_state: 'bounced'
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3513,9 +3493,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			$date // Created after.
+			created_after: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3541,10 +3519,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2024-01-01');
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			null, // Created after.
-			$date // Created before.
+			created_before: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3570,11 +3545,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2022-01-01');
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			null, // Created after.
-			null, // Created before.
-			$date // Updated after.
+			updated_after: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3594,12 +3565,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$date   = new \DateTime('2024-01-01');
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			null, // Created after.
-			null, // Created before.
-			null, // Updated after.
-			$date // Updated before.
+			updated_before: $date
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3618,13 +3584,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscribersWithSortFieldParam()
 	{
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			null, // Created after.
-			null, // Created before.
-			null, // Updated after.
-			null, // Updated before.
-			'id' // Sort field.
+			sort_field: 'id'
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3649,14 +3609,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscribersWithSortOrderParam()
 	{
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			null, // Created after.
-			null, // Created before.
-			null, // Updated after.
-			null, // Updated before.
-			'id', // Sort field.
-			'asc' // Sort order.
+			sort_field: 'id',
+			sort_order: 'asc'
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3682,18 +3636,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		// Return one broadcast.
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			null, // Created after.
-			null, // Created before.
-			null, // Updated after.
-			null, // Updated before.
-			'id', // Sort field.
-			'desc', // Sort order.
-			false, // Include total count.
-			'', // After cursor.
-			'', // Before cursor.
-			1 // Per page.
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3709,18 +3652,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Use pagination to fetch next page.
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			null, // Created after.
-			null, // Created before.
-			null, // Updated after.
-			null, // Updated before.
-			'id', // Sort field.
-			'desc', // Sort order.
-			false, // Include total count.
-			$result['pagination']['end_cursor'], // After cursor.
-			'', // Before cursor.
-			1 // Per page.
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3736,18 +3669,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Use pagination to fetch previous page.
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			null, // Created after.
-			null, // Created before.
-			null, // Updated after.
-			null, // Updated before.
-			'id', // Sort field.
-			'desc', // Sort order.
-			false, // Include total count.
-			'', // After cursor.
-			$result['pagination']['start_cursor'], // Before cursor.
-			1 // Per page.
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3766,10 +3689,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscribersWithInvalidEmailAddress()
 	{
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'not-an-email-address' // Email address.
+			email_address: 'not-an-email-address'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -3783,9 +3705,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscribersWithInvalidSubscriberState()
 	{
 		$result = $this->api->get_subscribers(
-			'not-a-valid-state' // Subscriber state.
+			subscriber_state: 'not-a-valid-state'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -3799,15 +3721,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscribersWithInvalidSortFieldParam()
 	{
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			null, // Created after.
-			null, // Created before.
-			null, // Updated after.
-			null, // Updated before.
-			'not-a-valid-sort-field' // Sort field.
+			sort_field: 'not-a-valid-sort-field'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -3821,16 +3737,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscribersWithInvalidSortOrderParam()
 	{
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			null, // Created after.
-			null, // Created before.
-			null, // Updated after.
-			null, // Updated before.
-			'id', // Sort field.
-			'not-a-valid-sort-order' // Sort order.
+			sort_order: 'not-a-valid-sort-order'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -3844,18 +3753,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscribersWithInvalidPagination()
 	{
 		$result = $this->api->get_subscribers(
-			'active', // Subscriber state.
-			'', // Email address.
-			null, // Created after.
-			null, // Created before.
-			null, // Updated after.
-			null, // Updated before.
-			'id', // Sort field.
-			'desc', // Sort order.
-			false, // Include total count.
-			'not-a-valid-cursor' // After cursor.
+			after_cursor: 'not-a-valid-cursor'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -3868,10 +3768,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testCreateSubscriber()
 	{
 		$emailAddress = $this->generateEmailAddress();
-		$result       = $this->api->create_subscriber(
-			$emailAddress
-		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$result       = $this->api->create_subscriber($emailAddress);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -3894,10 +3792,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$firstName    = 'FirstName';
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->create_subscriber(
-			$emailAddress,
-			$firstName
+			email_address: $emailAddress,
+			first_name: $firstName
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -3921,11 +3819,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$subscriberState = 'cancelled';
 		$emailAddress    = $this->generateEmailAddress();
 		$result          = $this->api->create_subscriber(
-			$emailAddress,
-			'', // First name.
-			$subscriberState
+			email_address: $emailAddress,
+			subscriber_state: $subscriberState
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -3949,14 +3846,12 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$lastName     = 'LastName';
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->create_subscriber(
-			$emailAddress,
-			'', // First name.
-			'', // Subscriber state.
-			[
+			email_address: $emailAddress,
+			fields: [
 				'last_name' => $lastName,
 			]
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -3978,9 +3873,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testCreateSubscriberWithInvalidEmailAddress()
 	{
 		$result = $this->api->create_subscriber(
-			'not-an-email-address'
+			email_address: 'not-an-email-address'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -3996,11 +3891,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->create_subscriber(
-			$emailAddress,
-			'', // First name.
-			'not-a-valid-state'
+			email_address: $emailAddress,
+			subscriber_state: 'not-a-valid-state'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -4016,14 +3910,12 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->create_subscriber(
-			$emailAddress,
-			'', // First name.
-			'', // Subscriber state.
-			[
+			email_address: $emailAddress,
+			fields: [
 				'not_a_custom_field' => 'value',
 			]
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -4051,7 +3943,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 			],
 		];
 		$result      = $this->api->create_subscribers($subscribers);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -4082,7 +3974,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 				[],
 			]
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -4136,7 +4028,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscriberIDWithInvalidEmailAddress()
 	{
 		$result = $this->api->get_subscriber_id('not-an-email-address');
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -4181,7 +4073,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscriberWithInvalidSubscriberID()
 	{
 		$result = $this->api->get_subscriber(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -4213,10 +4105,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		// Add a subscriber.
 		$firstName    = 'FirstName';
 		$emailAddress = $this->generateEmailAddress();
-		$result       = $this->api->create_subscriber(
-			$emailAddress
-		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$result       = $this->api->create_subscriber($emailAddress);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -4230,8 +4120,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Update subscriber's first name.
 		$result = $this->api->update_subscriber(
-			$subscriberID,
-			$firstName
+			subscriber_id: $subscriberID,
+			first_name: $firstName
 		);
 
 		// Assert changes were made.
@@ -4250,10 +4140,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		// Add a subscriber.
 		$emailAddress = $this->generateEmailAddress();
-		$result       = $this->api->create_subscriber(
-			$emailAddress
-		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$result       = $this->api->create_subscriber($emailAddress);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -4268,9 +4156,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		// Update subscriber's email address.
 		$newEmail = $this->generateEmailAddress();
 		$result   = $this->api->update_subscriber(
-			$subscriberID,
-			'', // First name.
-			$newEmail
+			subscriber_id: $subscriberID,
+			email_address: $newEmail
 		);
 
 		// Assert changes were made.
@@ -4290,10 +4177,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		// Add a subscriber.
 		$lastName     = 'LastName';
 		$emailAddress = $this->generateEmailAddress();
-		$result       = $this->api->create_subscriber(
-			$emailAddress
-		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$result       = $this->api->create_subscriber($emailAddress);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set subscriber_id to ensure subscriber is unsubscribed after test.
@@ -4307,10 +4192,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Update subscriber's custom fields.
 		$result = $this->api->update_subscriber(
-			$subscriberID,
-			'', // First name.
-			'', // Email address.
-			[
+			subscriber_id: $subscriberID,
+			fields: [
 				'last_name' => $lastName,
 			]
 		);
@@ -4331,7 +4214,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testUpdateSubscriberWithInvalidSubscriberID()
 	{
 		$result = $this->api->update_subscriber(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -4348,10 +4231,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Add a subscriber.
 		$emailAddress = $this->generateEmailAddress();
-		$result       = $this->api->create_subscriber(
-			$emailAddress
-		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$result       = $this->api->create_subscriber($emailAddress);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Unsubscribe.
@@ -4369,7 +4250,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testUnsubscribeByEmailWithNotSubscribedEmailAddress()
 	{
 		$result = $this->api->unsubscribe_by_email('not-subscribed@kit.com');
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -4383,7 +4264,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testUnsubscribeByEmailWithInvalidEmailAddress()
 	{
 		$result = $this->api->unsubscribe_by_email('invalid-email');
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -4397,10 +4278,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		// Add a subscriber.
 		$emailAddress = $this->generateEmailAddress();
-		$result       = $this->api->create_subscriber(
-			$emailAddress
-		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$result       = $this->api->create_subscriber($emailAddress);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Unsubscribe.
@@ -4418,7 +4297,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testUnsubscribeWithInvalidSubscriberID()
 	{
 		$result = $this->api->unsubscribe(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -4448,8 +4327,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscriberTagsWithTotalCount()
 	{
 		$result = $this->api->get_subscriber_tags(
-			(int) $_ENV['CONVERTKIT_API_SUBSCRIBER_ID'],
-			true
+			subscriber_id: (int) $_ENV['CONVERTKIT_API_SUBSCRIBER_ID'],
+			include_total_count: true
 		);
 
 		// Assert tags and pagination exist.
@@ -4472,7 +4351,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscriberTagsWithInvalidSubscriberID()
 	{
 		$result = $this->api->get_subscriber_tags(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -4487,11 +4366,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetSubscriberTagsPagination()
 	{
 		$result = $this->api->get_subscriber_tags(
-			(int) $_ENV['CONVERTKIT_API_SUBSCRIBER_ID'],
-			false, // Include total count.
-			'', // After cursor.
-			'', // Before cursor.
-			1 // Per page.
+			subscriber_id: (int) $_ENV['CONVERTKIT_API_SUBSCRIBER_ID'],
+			include_total_count: false,
+			per_page: 1
 		);
 
 		// Assert tags and pagination exist.
@@ -4507,11 +4384,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Use pagination to fetch next page.
 		$result = $this->api->get_subscriber_tags(
-			(int) $_ENV['CONVERTKIT_API_SUBSCRIBER_ID'],
-			false, // Include total count.
-			$result['pagination']['end_cursor'], // After cursor.
-			'', // Before cursor.
-			1 // Per page.
+			subscriber_id: (int) $_ENV['CONVERTKIT_API_SUBSCRIBER_ID'],
+			include_total_count: false,
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
 		);
 
 		// Assert tags and pagination exist.
@@ -4527,11 +4403,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Use pagination to fetch previous page.
 		$result = $this->api->get_subscriber_tags(
-			(int) $_ENV['CONVERTKIT_API_SUBSCRIBER_ID'],
-			false, // Include total count.
-			'', // After cursor.
-			$result['pagination']['start_cursor'], // Before cursor.
-			1 // Per page.
+			subscriber_id: (int) $_ENV['CONVERTKIT_API_SUBSCRIBER_ID'],
+			include_total_count: false,
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
 		);
 
 		// Assert tags and pagination exist.
@@ -4590,7 +4465,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetEmailTemplatesPagination()
 	{
 		// Return one broadcast.
-		$result = $this->api->get_email_templates(false, '', '', 1);
+		$result = $this->api->get_email_templates(
+			include_total_count: false,
+			per_page: 1
+		);
 
 		// Assert email templates and pagination exist.
 		$this->assertDataExists($result, 'email_templates');
@@ -4604,7 +4482,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch next page.
-		$result = $this->api->get_email_templates(false, $result['pagination']['end_cursor'], '', 1);
+		$result = $this->api->get_email_templates(
+			include_total_count: false,
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert email templates and pagination exist.
 		$this->assertDataExists($result, 'email_templates');
@@ -4618,7 +4500,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
-		$result = $this->api->get_email_templates(false, '', $result['pagination']['start_cursor'], 1);
+		$result = $this->api->get_email_templates(
+			include_total_count: false,
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
+		);
 
 		// Assert email templates and pagination exist.
 		$this->assertDataExists($result, 'email_templates');
@@ -4643,7 +4529,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetBroadcastsPagination()
 	{
 		// Return one broadcast.
-		$result = $this->api->get_broadcasts(false, '', '', 1);
+		$result = $this->api->get_broadcasts(
+			include_total_count: false,
+			per_page: 1
+		);
 
 		// Assert broadcasts and pagination exist.
 		$this->assertDataExists($result, 'broadcasts');
@@ -4657,7 +4546,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch next page.
-		$result = $this->api->get_broadcasts(false, $result['pagination']['end_cursor'], '', 1);
+		$result = $this->api->get_broadcasts(
+			include_total_count: false,
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert broadcasts and pagination exist.
 		$this->assertDataExists($result, 'broadcasts');
@@ -4671,7 +4564,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
-		$result = $this->api->get_broadcasts(false, '', $result['pagination']['start_cursor'], 1);
+		$result = $this->api->get_broadcasts(
+			include_total_count: false,
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
+		);
 
 		// Assert broadcasts and pagination exist.
 		$this->assertDataExists($result, 'broadcasts');
@@ -4701,11 +4598,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		// Create a broadcast first.
 		$result = $this->api->create_broadcast(
-			'Test Subject',
-			'Test Content',
-			'Test Broadcast from WordPress Libraries',
+			subject: 'Test Subject',
+			content: 'Test Content',
+			description: 'Test Broadcast from WordPress Libraries'
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Store Broadcast ID.
@@ -4722,12 +4619,12 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Update the existing broadcast.
 		$result = $this->api->update_broadcast(
-			$broadcastID,
-			'New Test Subject',
-			'New Test Content',
-			'New Test Broadcast from WordPress Libraries'
+			id: $broadcastID,
+			subject: 'New Test Subject',
+			content: 'New Test Content',
+			description: 'New Test Broadcast from WordPress Libraries'
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Confirm the changes saved.
@@ -4741,7 +4638,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Delete Broadcast.
 		$result = $this->api->delete_broadcast($broadcastID);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -4754,21 +4651,21 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testCreatePublicBroadcastWithValidDates()
 	{
 		// Create DateTime object.
-		$publishedAt = new DateTime('now');
+		$publishedAt = new \DateTime('now');
 		$publishedAt->modify('+7 days');
-		$sendAt = new DateTime('now');
+		$sendAt = new \DateTime('now');
 		$sendAt->modify('+14 days');
 
 		// Create broadcast first.
 		$result = $this->api->create_broadcast(
-			'Test Subject',
-			'Test Content',
-			'Test Broadcast from WordPress Libraries',
-			true,
-			$publishedAt,
-			$sendAt
+			subject: 'Test Subject',
+			content: 'Test Content',
+			description: 'Test Broadcast from WordPress Libraries',
+			public: true,
+			published_at: $publishedAt,
+			send_at: $sendAt
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Store Broadcast ID.
@@ -4802,7 +4699,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetBroadcast()
 	{
 		$result = $this->api->get_broadcast($_ENV['CONVERTKIT_API_BROADCAST_ID']);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('id', $result['broadcast']);
 		$this->assertEquals($result['broadcast']['id'], $_ENV['CONVERTKIT_API_BROADCAST_ID']);
@@ -4819,7 +4716,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetBroadcastWithInvalidBroadcastID()
 	{
 		$result = $this->api->get_broadcast(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -4832,7 +4729,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetBroadcastStats()
 	{
 		$result = $this->api->get_broadcast_stats($_ENV['CONVERTKIT_API_BROADCAST_ID']);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		$this->assertArrayHasKey('broadcast', $result);
@@ -4856,7 +4753,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetBroadcastStatsWithInvalidBroadcastID()
 	{
 		$result = $this->api->get_broadcast_stats(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -4870,7 +4767,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testUpdateBroadcastWithInvalidBroadcastID()
 	{
 		$result = $this->api->update_broadcast(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -4884,7 +4781,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testDeleteBroadcastWithInvalidBroadcastID()
 	{
 		$result = $this->api->delete_broadcast(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -4901,11 +4798,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$results = [
 			$this->api->create_webhook(
 				'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
-				'subscriber.subscriber_activate',
+				'subscriber.subscriber_activate'
 			),
 			$this->api->create_webhook(
 				'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
-				'subscriber.subscriber_activate',
+				'subscriber.subscriber_activate'
 			),
 		];
 
@@ -4916,7 +4813,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		];
 
 		// Get webhooks.
-		$result = $this->api->get_webhooks(false, '', '', 1);
+		$result = $this->api->get_webhooks(
+			include_total_count: false,
+			per_page: 1
+		);
 
 		// Assert webhooks and pagination exist.
 		$this->assertDataExists($result, 'webhooks');
@@ -4930,7 +4830,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch next page.
-		$result = $this->api->get_webhooks(false, $result['pagination']['end_cursor'], '', 1);
+		$result = $this->api->get_webhooks(
+			include_total_count: false,
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert webhooks and pagination exist.
 		$this->assertDataExists($result, 'webhooks');
@@ -4944,7 +4848,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertFalse($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
-		$result = $this->api->get_webhooks(false, '', $result['pagination']['start_cursor'], 1);
+		$result = $this->api->get_webhooks(
+			include_total_count: false,
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
+		);
 
 		// Assert webhooks and pagination exist.
 		$this->assertDataExists($result, 'webhooks');
@@ -4968,10 +4876,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		// Create a webhook first.
 		$result = $this->api->create_webhook(
-			'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
-			'subscriber.subscriber_activate',
+			url: 'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
+			event: 'subscriber.subscriber_activate'
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Store ID.
@@ -4997,7 +4905,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Delete the webhook.
 		$result = $this->api->delete_webhook($id);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -5012,9 +4920,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		// Create a webhook.
 		$url    = 'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds');
 		$result = $this->api->create_webhook(
-			$url,
-			'subscriber.form_subscribe',
-			$_ENV['CONVERTKIT_API_FORM_ID']
+			url: $url,
+			event: 'subscriber.form_subscribe',
+			parameter: $_ENV['CONVERTKIT_API_FORM_ID']
 		);
 
 		// Confirm webhook created with correct data.
@@ -5039,10 +4947,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testCreateWebhookWithInvalidEvent()
 	{
-		$this->expectException(InvalidArgumentException::class);
+		$this->expectException(\InvalidArgumentException::class);
 		$this->api->create_webhook(
-			'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
-			'invalid.event'
+			url: 'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
+			event: 'invalid.event'
 		);
 	}
 
@@ -5057,7 +4965,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testDeleteWebhookWithInvalidID()
 	{
 		$result = $this->api->delete_webhook(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5109,7 +5017,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetCustomFieldsPagination()
 	{
 		// Return one custom field.
-		$result = $this->api->get_custom_fields(false, '', '', 1);
+		$result = $this->api->get_custom_fields(
+			include_total_count: false,
+			per_page: 1
+		);
 
 		// Assert custom fields and pagination exist.
 		$this->assertDataExists($result, 'custom_fields');
@@ -5123,7 +5034,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch next page.
-		$result = $this->api->get_custom_fields(false, $result['pagination']['end_cursor'], '', 1);
+		$result = $this->api->get_custom_fields(
+			include_total_count: false,
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert custom fields and pagination exist.
 		$this->assertDataExists($result, 'custom_fields');
@@ -5137,7 +5052,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
-		$result = $this->api->get_custom_fields(false, '', $result['pagination']['start_cursor'], 1);
+		$result = $this->api->get_custom_fields(
+			include_total_count: false,
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
+		);
 
 		// Assert custom fields and pagination exist.
 		$this->assertDataExists($result, 'custom_fields');
@@ -5164,7 +5083,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$result = $this->api->create_custom_field($label);
 
 		// Test array was returned.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set custom_field_ids to ensure custom fields are deleted after test.
@@ -5189,7 +5108,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testCreateCustomFieldWithBlankLabel()
 	{
 		$result = $this->api->create_custom_field('');
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5209,7 +5128,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$result = $this->api->create_custom_fields($labels);
 
 		// Test array was returned.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Set custom_field_ids to ensure custom fields are deleted after test.
@@ -5238,7 +5157,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$result = $this->api->create_custom_field($label);
 
 		// Test array was returned.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Store ID.
@@ -5271,7 +5190,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testUpdateCustomFieldWithInvalidID()
 	{
 		$result = $this->api->update_custom_field(12345, 'Something');
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5289,7 +5208,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$result = $this->api->create_custom_field($label);
 
 		// Test array was returned.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Store ID.
@@ -5316,7 +5235,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testDeleteCustomFieldWithInvalidID()
 	{
 		$result = $this->api->delete_custom_field(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5332,16 +5251,16 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		// Make request.
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->form_subscribe(
-			$_ENV['CONVERTKIT_API_FORM_ID'],
-			$emailAddress,
-			'First',
-			[
+			form_id: $_ENV['CONVERTKIT_API_FORM_ID'],
+			email: $emailAddress,
+			first_name: 'First',
+			custom_fields: [
 				'last_name' => 'Last',
 			]
 		);
 
 		// Test array was returned.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Assert subscriber created.
@@ -5361,10 +5280,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testFormSubscribeWithInvalidFormID()
 	{
 		$result = $this->api->form_subscribe(
-			12345,
-			$this->generateEmailAddress()
+			form_id: 12345,
+			email: $this->generateEmailAddress()
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5379,10 +5298,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testFormSubscribeWithLegacyFormID()
 	{
 		$result = $this->api->form_subscribe(
-			$_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
-			$this->generateEmailAddress()
+			form_id: $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
+			email: $this->generateEmailAddress()
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5397,10 +5316,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testFormSubscribeWithInvalidEmailAddress()
 	{
 		$result = $this->api->form_subscribe(
-			$_ENV['CONVERTKIT_API_FORM_ID'],
-			'not-a-valid-email'
+			form_id: $_ENV['CONVERTKIT_API_FORM_ID'],
+			email: 'not-a-valid-email'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5416,16 +5335,16 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		// Make request.
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->legacy_form_subscribe(
-			$_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
-			$emailAddress,
-			'First',
-			[
+			form_id: $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
+			email: $emailAddress,
+			first_name: 'First',
+			custom_fields: [
 				'last_name' => 'Last',
 			]
 		);
 
 		// Test array was returned.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Assert subscriber created.
@@ -5445,10 +5364,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testLegacyFormSubscribeWithInvalidFormID()
 	{
 		$result = $this->api->legacy_form_subscribe(
-			12345,
-			$this->generateEmailAddress()
+			form_id: 12345,
+			email: $this->generateEmailAddress()
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5463,10 +5382,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testLegacyFormSubscribeWithNonLegacyFormID()
 	{
 		$result = $this->api->legacy_form_subscribe(
-			$_ENV['CONVERTKIT_API_FORM_ID'],
-			$this->generateEmailAddress()
+			form_id: $_ENV['CONVERTKIT_API_FORM_ID'],
+			email: $this->generateEmailAddress()
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5481,10 +5400,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testLegacyFormSubscribeWithInvalidEmailAddress()
 	{
 		$result = $this->api->legacy_form_subscribe(
-			$_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
-			'not-a-valid-email'
+			form_id: $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
+			email: 'not-a-valid-email'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5500,16 +5419,16 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		// Make request.
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->tag_subscribe(
-			$_ENV['CONVERTKIT_API_TAG_ID'],
-			$emailAddress,
-			'First',
-			[
+			tag_id: $_ENV['CONVERTKIT_API_TAG_ID'],
+			email: $emailAddress,
+			first_name: 'First',
+			custom_fields: [
 				'last_name' => 'Last',
 			]
 		);
 
 		// Test array was returned.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Assert subscriber created.
@@ -5529,10 +5448,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testTagSubscribeWithInvalidTagID()
 	{
 		$result = $this->api->tag_subscribe(
-			12345,
-			$this->generateEmailAddress()
+			tag_id: 12345,
+			email: $this->generateEmailAddress()
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5547,10 +5466,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testTagSubscribeWithInvalidEmailAddress()
 	{
 		$result = $this->api->tag_subscribe(
-			$_ENV['CONVERTKIT_API_TAG_ID'],
-			'not-a-valid-email'
+			tag_id: $_ENV['CONVERTKIT_API_TAG_ID'],
+			email: 'not-a-valid-email'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5566,16 +5485,16 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		// Make request.
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->sequence_subscribe(
-			$_ENV['CONVERTKIT_API_SEQUENCE_ID'],
-			$emailAddress,
-			'First',
-			[
+			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+			email: $emailAddress,
+			first_name: 'First',
+			custom_fields: [
 				'last_name' => 'Last',
 			]
 		);
 
 		// Test array was returned.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Assert subscriber created.
@@ -5595,10 +5514,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testSequenceSubscribeWithInvalidTagID()
 	{
 		$result = $this->api->sequence_subscribe(
-			12345,
-			$this->generateEmailAddress()
+			sequence_id: 12345,
+			email: $this->generateEmailAddress()
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5613,10 +5532,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testSequenceSubscribeWithInvalidEmailAddress()
 	{
 		$result = $this->api->sequence_subscribe(
-			$_ENV['CONVERTKIT_API_TAG_ID'],
-			'not-a-valid-email'
+			sequence_id: $_ENV['CONVERTKIT_API_TAG_ID'],
+			email: 'not-a-valid-email'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5630,7 +5549,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$result = $this->api->get_posts();
 
 		// Test array was returned.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Test expected response keys exist.
@@ -5656,7 +5575,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetPostsNoData()
 	{
 		$result = $this->api_no_data->get_posts();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertCount(0, $result);
 	}
@@ -5672,7 +5591,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$result = $this->api->get_posts(1, 2);
 
 		// Test array was returned.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 
 		// Test expected response keys exist.
@@ -5701,7 +5620,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetPostsWithInvalidPageParameter()
 	{
 		$result = $this->api->get_posts(0);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals('get_posts(): the page parameter must be equal to or greater than 1.', $result->get_error_message());
 	}
@@ -5715,7 +5634,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetPostsWithNegativePerPageParameter()
 	{
 		$result = $this->api->get_posts(1, 0);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals('get_posts(): the per_page parameter must be equal to or greater than 1.', $result->get_error_message());
 	}
@@ -5729,7 +5648,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetPostsWithOutOfBoundsPerPageParameter()
 	{
 		$result = $this->api->get_posts(1, 100);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals('get_posts(): the per_page parameter must be equal to or less than 50.', $result->get_error_message());
 	}
@@ -5742,7 +5661,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetAllPosts()
 	{
 		$result = $this->api->get_all_posts();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('id', reset($result));
 		$this->assertArrayHasKey('title', reset($result));
@@ -5760,7 +5679,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetAllPostsNoData()
 	{
 		$result = $this->api_no_data->get_all_posts();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertCount(0, $result);
 	}
@@ -5774,7 +5693,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetAllPostsWithValidParameters()
 	{
 		$result = $this->api->get_all_posts(2); // Number of posts to fetch in each request within the function.
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertCount(5, $result);
 		$this->assertArrayHasKey('id', reset($result));
@@ -5794,13 +5713,13 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		// Test with a number less than 1.
 		$result = $this->api->get_all_posts(0);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals('get_all_posts(): the posts_per_request parameter must be equal to or greater than 1.', $result->get_error_message());
 
 		// Test with a number greater than 50.
 		$result = $this->api->get_all_posts(51);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals('get_all_posts(): the posts_per_request parameter must be equal to or less than 50.', $result->get_error_message());
 	}
@@ -5813,7 +5732,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetPostByID()
 	{
 		$result = $this->api->get_post($_ENV['CONVERTKIT_API_POST_ID']);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('id', $result);
 		$this->assertArrayHasKey('title', $result);
@@ -5836,7 +5755,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetPostByInvalidID()
 	{
 		$result = $this->api->get_post(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -5848,7 +5767,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetProducts()
 	{
 		$result = $this->api->get_products();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('id', reset($result));
 		$this->assertArrayHasKey('name', reset($result));
@@ -5865,7 +5784,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetProductsNoData()
 	{
 		$result = $this->api_no_data->get_products();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertCount(0, $result);
 	}
@@ -5879,10 +5798,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testSubscriberAuthenticationSendCodeWithSubscribedEmail()
 	{
 		$result = $this->api->subscriber_authentication_send_code(
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL'],
-			$_ENV['TEST_SITE_WP_URL']
+			email: $_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL'],
+			redirect_url: $_ENV['WORDPRESS_URL']
 		);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -5894,10 +5813,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testSubscriberAuthenticationSendCodeWithNotSubscribedEmail()
 	{
 		$result = $this->api->subscriber_authentication_send_code(
-			'email-not-subscribed@kit.com',
-			$_ENV['TEST_SITE_WP_URL']
+			email: 'email-not-subscribed@kit.com',
+			redirect_url: $_ENV['WORDPRESS_URL']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'invalid: Email address is invalid');
 	}
@@ -5911,10 +5830,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testSubscriberAuthenticationSendCodeWithNoEmail()
 	{
 		$result = $this->api->subscriber_authentication_send_code(
-			'',
-			$_ENV['TEST_SITE_WP_URL']
+			email: '',
+			redirect_url: $_ENV['WORDPRESS_URL']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'subscriber_authentication_send_code(): the email parameter is empty.');
 	}
@@ -5928,10 +5847,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testSubscriberAuthenticationSendCodeWithInvalidEmail()
 	{
 		$result = $this->api->subscriber_authentication_send_code(
-			'not-an-email-address',
-			$_ENV['TEST_SITE_WP_URL']
+			email: 'not-an-email-address',
+			redirect_url: $_ENV['WORDPRESS_URL']
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'invalid: Email address is invalid');
 	}
@@ -5945,10 +5864,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testSubscriberAuthenticationSendCodeWithInvalidRedirectURL()
 	{
 		$result = $this->api->subscriber_authentication_send_code(
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL'],
-			'not-a-valid-url'
+			email: $_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL'],
+			redirect_url: 'not-a-valid-url'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'subscriber_authentication_send_code(): the redirect_url parameter is not a valid URL.');
 	}
@@ -5962,10 +5881,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testSubscriberAuthenticationVerifyWithValidTokenAndInvalidSubscriberCode()
 	{
 		$result = $this->api->subscriber_authentication_verify(
-			$_ENV['CONVERTKIT_API_SUBSCRIBER_TOKEN'],
-			'subscriberCode'
+			token: $_ENV['CONVERTKIT_API_SUBSCRIBER_TOKEN'],
+			subscriber_code: 'subscriberCode'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'The entered code is invalid. Please try again, or click the link sent in the email.');
 	}
@@ -5979,10 +5898,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testSubscriberAuthenticationVerifyWithNoToken()
 	{
 		$result = $this->api->subscriber_authentication_verify(
-			'',
-			'subscriberCode'
+			token: '',
+			subscriber_code: 'subscriberCode'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'subscriber_authentication_verify(): the token parameter is empty.');
 	}
@@ -5996,10 +5915,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testSubscriberAuthenticationVerifyWithNoSubscriberCode()
 	{
 		$result = $this->api->subscriber_authentication_verify(
-			'token',
-			''
+			token: 'token',
+			subscriber_code: ''
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'subscriber_authentication_verify(): the subscriber_code parameter is empty.');
 	}
@@ -6013,10 +5932,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testSubscriberAuthenticationVerifyWithInvalidTokenAndSubscriberCode()
 	{
 		$result = $this->api->subscriber_authentication_verify(
-			'invalidToken',
-			'invalidSubscriberCode'
+			token: 'invalidToken',
+			subscriber_code: 'invalidSubscriberCode'
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 		$this->assertEquals($result->get_error_message(), 'The entered code is invalid. Please try again, or click the link sent in the email.');
 	}
@@ -6030,8 +5949,8 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testProfilesWithValidSignedSubscriberID()
 	{
-		$result = $this->api->profile( $_ENV['CONVERTKIT_API_SIGNED_SUBSCRIBER_ID'] );
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$result = $this->api->profile($_ENV['CONVERTKIT_API_SIGNED_SUBSCRIBER_ID']);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('id', $result);
 		$this->assertArrayHasKey('products', $result);
@@ -6047,7 +5966,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testProfilesWithInvalidSignedSubscriberID()
 	{
 		$result = $this->api->profile('fakeSignedID');
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -6060,7 +5979,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testProfilesWithNoSignedSubscriberID()
 	{
 		$result = $this->api->profile('');
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -6090,7 +6009,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetPurchasesWithTotalCount()
 	{
-		$result = $this->api->get_purchases(true);
+		$result = $this->api->get_purchases(
+			include_total_count: true
+		);
 
 		// Assert purchases and pagination exist.
 		$this->assertDataExists($result, 'purchases');
@@ -6111,7 +6032,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetPurchasesPagination()
 	{
-		$result = $this->api->get_purchases(false, '', '', 1);
+		$result = $this->api->get_purchases(
+			per_page: 1
+		);
 
 		// Assert purchases and pagination exist.
 		$this->assertDataExists($result, 'purchases');
@@ -6125,7 +6048,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch next page.
-		$result = $this->api->get_purchases(false, $result['pagination']['end_cursor'], '', 1);
+		$result = $this->api->get_purchases(
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert purchases and pagination exist.
 		$this->assertDataExists($result, 'purchases');
@@ -6139,7 +6065,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
-		$result = $this->api->get_purchases(false, '', $result['pagination']['end_cursor'], 1);
+		$result = $this->api->get_purchases(
+			before_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert purchases and pagination exist.
 		$this->assertDataExists($result, 'purchases');
@@ -6162,7 +6091,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetPurchase()
 	{
-		$result = $this->api->get_purchases(false, '', '', 1);
+		$result = $this->api->get_purchases(
+			per_page: 1
+		);
 
 		// Assert purchases and pagination exist.
 		$this->assertDataExists($result, 'purchases');
@@ -6176,7 +6107,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 
 		// Get purchase.
 		$result = $this->api->get_purchase($id);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertEquals($result['purchase']['id'], $id);
 	}
@@ -6192,7 +6123,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetPurchaseWithInvalidID()
 	{
 		$result = $this->api->get_purchase(12345);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -6207,9 +6138,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	{
 		$result = $this->api->create_purchase(
 			// Required fields.
-			$this->generateEmailAddress(),
-			str_shuffle('wfervdrtgsdewrafvwefds'), // transaction ID.
-			[ // products.
+			email_address: $this->generateEmailAddress(),
+			transaction_id: str_shuffle('wfervdrtgsdewrafvwefds'),
+			products: [
 				[
 					'name'       => 'Floppy Disk (512k)',
 					'sku'        => '7890-ijkl',
@@ -6228,18 +6159,18 @@ class APITest extends \Codeception\TestCase\WPTestCase
 				],
 			],
 			// Optional fields.
-			'usd', // currency.
-			'Tim', // first name.
-			'paid', // status.
-			20.00, // subtotal.
-			2.00, // tax.
-			2.00, // shipping.
-			3.00, // discount.
-			21.00, // total.
-			new DateTime('now'), // transaction time.
+			currency: 'usd',
+			first_name: 'Tim',
+			status: 'paid',
+			subtotal: 20.00,
+			tax: 2.00,
+			shipping: 2.00,
+			discount: 3.00,
+			total: 21.00,
+			transaction_time: new \DateTime('now')
 		);
 
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('transaction_id', $result['purchase']);
 	}
@@ -6255,9 +6186,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testCreatePurchaseWithInvalidEmailAddress()
 	{
 		$result = $this->api->create_purchase(
-			'not-an-email-address',
-			str_shuffle('wfervdrtgsdewrafvwefds'), // transaction ID.
-			[ // products.
+			email_address: 'not-an-email-address',
+			transaction_id: str_shuffle('wfervdrtgsdewrafvwefds'),
+			products: [
 				[
 					'name'       => 'Floppy Disk (512k)',
 					'sku'        => '7890-ijkl',
@@ -6268,7 +6199,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 				],
 			]
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -6283,9 +6214,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testCreatePurchaseWithBlankTransactionID()
 	{
 		$result = $this->api->create_purchase(
-			$this->generateEmailAddress(),
-			'', // transaction ID.
-			[ // products.
+			email_address: $this->generateEmailAddress(),
+			transaction_id: '',
+			products: [
 				[
 					'name'       => 'Floppy Disk (512k)',
 					'sku'        => '7890-ijkl',
@@ -6296,7 +6227,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 				],
 			]
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -6311,11 +6242,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testCreatePurchaseWithNoProducts()
 	{
 		$result = $this->api->create_purchase(
-			$this->generateEmailAddress(),
-			str_shuffle('wfervdrtgsdewrafvwefds'),
-			array()
+			email_address: $this->generateEmailAddress(),
+			transaction_id: str_shuffle('wfervdrtgsdewrafvwefds'),
+			products: []
 		);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
@@ -6345,7 +6276,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetSegmentsWithTotalCount()
 	{
-		$result = $this->api->get_segments(true);
+		$result = $this->api->get_segments(
+			include_total_count: true
+		);
 
 		// Assert segments and pagination exist.
 		$this->assertDataExists($result, 'segments');
@@ -6366,7 +6299,9 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetSegmentsPagination()
 	{
-		$result = $this->api->get_segments(false, '', '', 1);
+		$result = $this->api->get_segments(
+			per_page: 1
+		);
 
 		// Assert segments and pagination exist.
 		$this->assertDataExists($result, 'segments');
@@ -6380,7 +6315,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch next page.
-		$result = $this->api->get_segments(false, $result['pagination']['end_cursor'], '', 1);
+		$result = $this->api->get_segments(
+			after_cursor: $result['pagination']['end_cursor'],
+			per_page: 1
+		);
 
 		// Assert segments and pagination exist.
 		$this->assertDataExists($result, 'segments');
@@ -6394,7 +6332,10 @@ class APITest extends \Codeception\TestCase\WPTestCase
 		$this->assertTrue($result['pagination']['has_next_page']);
 
 		// Use pagination to fetch previous page.
-		$result = $this->api->get_segments(false, '', $result['pagination']['start_cursor'], 1);
+		$result = $this->api->get_segments(
+			before_cursor: $result['pagination']['start_cursor'],
+			per_page: 1
+		);
 
 		// Assert segments and pagination exist.
 		$this->assertDataExists($result, 'segments');
@@ -6417,7 +6358,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testRecommendationsScript()
 	{
 		$result = $this->api->recommendations_script();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('enabled', $result);
 		$this->assertArrayHasKey('embed_js', $result);
@@ -6434,7 +6375,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testRecommendationsScriptWhenCreatorNetworkDisabled()
 	{
 		$result = $this->api_no_data->recommendations_script();
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
 		$this->assertArrayHasKey('enabled', $result);
 		$this->assertArrayHasKey('embed_js', $result);
@@ -6450,8 +6391,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetLegacyFormHTML()
 	{
-		$result = $this->api->get_form_html($_ENV['CONVERTKIT_API_LEGACY_FORM_ID'], $_ENV['CONVERTKIT_API_KEY']);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$result = $this->api->get_form_html(
+			id: $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'],
+			api_key: $_ENV['CONVERTKIT_API_KEY']
+		);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertStringContainsString('<form id="ck_subscribe_form" class="ck_subscribe_form" action="https://api.kit.com/landing_pages/' . $_ENV['CONVERTKIT_API_LEGACY_FORM_ID'] . '/subscribe" data-remote="true">', $result);
 
 		// Assert that the API class' manually added UTF-8 Content-Type has been removed prior to output.
@@ -6469,8 +6413,11 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	public function testGetLegacyFormHTMLWithInvalidFormID()
 	{
-		$result = $this->api->get_form_html('11111', $_ENV['CONVERTKIT_API_KEY']);
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$result = $this->api->get_form_html(
+			id: '11111',
+			api_key: $_ENV['CONVERTKIT_API_KEY']
+		);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -6482,7 +6429,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetLandingPageHTML()
 	{
 		$result = $this->api->get_landing_page_html($_ENV['CONVERTKIT_API_LANDING_PAGE_URL']);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertStringContainsString('<form method="POST" action="https://app.kit.com/forms/' . $_ENV['CONVERTKIT_API_LANDING_PAGE_ID'] . '/subscriptions" data-sv-form="' . $_ENV['CONVERTKIT_API_LANDING_PAGE_ID'] . '" data-uid="99f1db6843" class="formkit-form"', $result);
 
 		// Check that rocket-loader.min.js has been removed, as including it breaks landing page redirects.
@@ -6507,7 +6454,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetLandingPageWithCharacterEncodingHTML()
 	{
 		$result = $this->api->get_landing_page_html($_ENV['CONVERTKIT_API_LANDING_PAGE_CHARACTER_ENCODING_URL']);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertStringContainsString('<form method="POST" action="https://app.kit.com/forms/' . $_ENV['CONVERTKIT_API_LANDING_PAGE_CHARACTER_ENCODING_ID'] . '/subscriptions" data-sv-form="' . $_ENV['CONVERTKIT_API_LANDING_PAGE_CHARACTER_ENCODING_ID'] . '" data-uid="cc5eb21744" class="formkit-form"', $result);
 
 		// Assert that character encoding works, and that special characters are not malformed.
@@ -6530,7 +6477,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetLegacyLandingPageHTML()
 	{
 		$result = $this->api->get_landing_page_html($_ENV['CONVERTKIT_API_LEGACY_LANDING_PAGE_URL']);
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 
 		$this->assertStringContainsString('<form id="ck_subscribe_form" class="ck_subscribe_form" action="https://app.kit.com/landing_pages/' . $_ENV['CONVERTKIT_API_LEGACY_LANDING_PAGE_ID'] . '/subscribe" data-remote="true">', $result);
 
@@ -6554,7 +6501,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	public function testGetLandingPageHTMLWithInvalidLandingPageURL()
 	{
 		$result = $this->api->get_landing_page_html('http://fake-url');
-		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
 	/**
@@ -6684,7 +6631,7 @@ class APITest extends \Codeception\TestCase\WPTestCase
 	 */
 	private function assertDataExists($result, $key)
 	{
-		$this->assertNotInstanceOf(WP_Error::class, $result);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertArrayHasKey($key, $result);
 		$this->assertIsArray($result[ $key ]);
 	}
