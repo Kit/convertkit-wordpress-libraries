@@ -18,6 +18,17 @@
         "lucatume/wp-browser": "^3.0 || ^4.0"
     },
     "minimum-stability": "stable",
+    "scripts": {
+        "phpcs": "vendor/bin/phpcs ./ -s -v",
+        "phpcbf": "vendor/bin/phpcbf ./ -s -v",
+        "phpcs-tests": "vendor/bin/phpcs ./tests --standard=phpcs.tests.xml -s -v",
+        "phpcbf-tests": "vendor/bin/phpcbf ./tests --standard=phpcs.tests.xml -s -v",
+        "phpstan": "vendor/bin/phpstan analyse --memory-limit=1250M",
+        "test-integration": [
+            "vendor/bin/codecept build @no_additional_args",
+            "vendor/bin/codecept run Integration @additional_args --fail-fast"
+        ]
+    },
     "config": {
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
