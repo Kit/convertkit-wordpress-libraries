@@ -121,15 +121,12 @@ jobs:
           echo "CONVERTKIT_OAUTH_ACCESS_TOKEN_NO_DATA=$access_token" >> $GITHUB_ENV
           echo "CONVERTKIT_OAUTH_REFRESH_TOKEN_NO_DATA=$refresh_token" >> $GITHUB_ENV  
 
-      # Write any secrets, such as API keys, to the .env.dist.testing file now.
-      # Make sure your committed .env.dist.testing file ends with a newline.
-      # The formatting of the contents to include a blank newline is deliberate.
-      - name: Define GitHub Secrets in .env.dist.testing
+      # Write any secrets, such as API keys, to the .env.testing file now.
+      - name: Define GitHub Secrets in .env.testing
         uses: DamianReeves/write-file-action@v1.3
         with:
-          path: ${{ env.PLUGIN_DIR }}/.env.dist.testing
+          path: ${{ env.PLUGIN_DIR }}/.env.testing
           contents: |
-
             CONVERTKIT_API_KEY=${{ env.CONVERTKIT_API_KEY }}
             CONVERTKIT_API_SECRET=${{ env.CONVERTKIT_API_SECRET }}
             CONVERTKIT_OAUTH_ACCESS_TOKEN=${{ env.CONVERTKIT_OAUTH_ACCESS_TOKEN }}
@@ -140,6 +137,7 @@ jobs:
             CONVERTKIT_OAUTH_REDIRECT_URI=${{ env.CONVERTKIT_OAUTH_REDIRECT_URI }}
             CONVERTKIT_API_SIGNED_SUBSCRIBER_ID=${{ env.CONVERTKIT_API_SIGNED_SUBSCRIBER_ID }}
             CONVERTKIT_API_SUBSCRIBER_TOKEN=${{ env.CONVERTKIT_API_SUBSCRIBER_TOKEN }}
+
           write-mode: append
 
       # Installs wp-browser, Codeception, PHP CodeSniffer and anything else needed to run tests.
