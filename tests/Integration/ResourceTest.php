@@ -454,7 +454,7 @@ class ResourceTest extends WPTestCase
 
 		// Assert order of data is in ascending alphabetical order.
 		$this->assertEquals('Billing Address', reset($result)[ $this->resource->order_by ]);
-		$this->assertEquals('Test', end($result)[ $this->resource->order_by ]);
+		$this->assertEquals('URL', end($result)[ $this->resource->order_by ]);
 
 		// Confirm resources stored in WordPress options.
 		$resources = get_option($this->resource->settings_name);
