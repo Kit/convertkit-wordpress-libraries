@@ -1251,10 +1251,8 @@ class ConvertKit_API_V4 {
 			return $html->saveHTML();
 		}
 
-		// Remove some HTML tags that DOMDocument adds, returning the output.
-		// We do this instead of using LIBXML_HTML_NOIMPLIED in loadHTML(), because Legacy Forms are not always contained in
-		// a single root / outer element, which is required for LIBXML_HTML_NOIMPLIED to correctly work.
-		return $this->strip_html_head_body_tags( $html->saveHTML() );
+		// Return the HTML within the DOMDocument's <body> tag as a string.
+		return $this->get_body_html( $html );
 
 	}
 

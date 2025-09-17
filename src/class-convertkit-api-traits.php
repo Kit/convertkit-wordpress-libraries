@@ -1773,6 +1773,9 @@ trait ConvertKit_API_Traits
      */
     public function strip_html_head_body_tags(string $markup)
     {
+        // Mark as deprecated in 2.1.0.
+        _deprecated_function( __FUNCTION__, '2.1.0', 'get_body_html()' );
+        
         $markup = str_replace('<html>', '', $markup);
         $markup = str_replace('</html>', '', $markup);
         $markup = str_replace('<head>', '', $markup);
@@ -1783,6 +1786,28 @@ trait ConvertKit_API_Traits
 
         return $markup;
     }
+
+    /**
+	 * Returns the HTML within the DOMDocument's <body> tag as a string.
+	 *
+	 * @param \DOMDocument $dom DOM Document.
+	 * 
+	 * @since   2.1.0
+	 *
+	 * @return  string
+	 */
+	public function get_body_html(\DOMDocument $dom) {
+
+		$body = $dom->getElementsByTagName( 'body' )->item( 0 );
+
+		$html = '';
+		foreach ( $body->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			$html .= $dom->saveHTML( $child );
+		}
+
+		return $html;
+
+	}
 
     /**
      * Adds total count and pagination parameters to the given array of existing API parameters.
