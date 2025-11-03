@@ -35,7 +35,7 @@ jobs:
     # Defines the WordPress and PHP Versions matrix to run tests on.
     strategy:
       matrix:
-        wp-versions: [ 'latest' ] #[ '6.1.1', 'latest' ]
+        wp-versions: [ '6.9-beta2' ] #[ 'latest', '6.9-beta1' ]
         php-versions: [ '7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4' ] #[ '7.3', '7.4', '8.0', '8.1' ]
 
     # Steps to install, configure and run tests
@@ -125,4 +125,5 @@ jobs:
       # Run PHPStan for static analysis.
       - name: Run PHPStan Static Analysis
         working-directory: ${{ env.PLUGIN_DIR }}
-        run: php vendor/bin/phpstan analyse --memory-limit=1250M
+        if: ${{ contains('8.0 8.1 8.2 8.3 8.4', matrix.php-versions) }}
+        run: php vendor/bin/phpstan analyse --memory-limit=1024M
