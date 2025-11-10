@@ -1461,8 +1461,6 @@ class ConvertKit_API_V4 {
 			$this->log( 'API: Error: ' . $error );
 
 			switch ( $http_response_code ) {
-				// If the HTTP response code is 401, check the error matches 'The access token expired', refresh the access token now
-				// and attempt to re-attempt the request.
 				case 401:
 					switch ( $error ) {
 						case 'The access token expired':
@@ -1489,6 +1487,7 @@ class ConvertKit_API_V4 {
 							 *
 							 * @since   2.1.1
 							 *
+							 * @param   WP_Error  $error      WP_Error object.
 							 * @param   string    $client_id  OAuth Client ID.
 							 */
 							do_action( 'convertkit_api_access_token_invalid', $error, $this->client_id );
@@ -1496,9 +1495,7 @@ class ConvertKit_API_V4 {
 							// Return error.
 							return $error;
 					}
-					break;
 
-				// If a rate limit was hit, maybe try again.
 				case 429:
 					// If retry on rate limit hit is disabled, return a WP_Error.
 					if ( ! $retry_if_rate_limit_hit ) {
