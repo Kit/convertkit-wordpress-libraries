@@ -1458,6 +1458,16 @@ class ConvertKit_API_V4 {
 
 					// If an error occured, bail.
 					if ( is_wp_error( $result ) ) {
+						/**
+						 * Perform any actions when refreshing an expired access token fails.
+						 *
+						 * @since   3.1.0
+						 *
+						 * @param   WP_Error  $result     Error.
+						 * @param   string    $client_id  OAuth Client ID.
+						 */
+						do_action( 'convertkit_api_request_refresh_token_error', $result, $this->client_id );
+
 						return $result;
 					}
 
