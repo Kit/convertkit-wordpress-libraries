@@ -1432,47 +1432,50 @@ class ConvertKit_API_V4 {
 
 		// Return the API error message as a WP_Error if the HTTP response code is a 4xx code.
 		if ( $http_response_code >= 400 ) {
+
 			// Define the error message.
 			$error = $this->get_error_message_string( $response );
 
 			$this->log( 'API: Error: ' . $error );
 
 			switch ( $http_response_code ) {
-				// If the HTTP response code is 401, and the error matches 'The access token expired', refresh the access token now
-				// and re-attempt the request.
+				// If the HTTP response code is 401, check the error matches 'The access token expired', refresh the access token now
+				// and attempt to re-attempt the request.
 				case 401:
-					if ( $error !== 'The access token expired' ) {
-						break;
+					switch ( $error ) {
+						case 'The access token is invalid':
+							/**
+							 * Perform any actions when an invalid access token was used.
+							 *
+							 * @since   3.1.0
+							 *
+							 * @param   string    $client_id  OAuth Client ID.
+							 */
+							do_action( 'convertkit_api_request_error_access_token_invalid', $this->client_id );
+							break;
+
+						case 'The access token expired':
+							// Attempt to refresh the access token.
+							$result = $this->refresh_token();
+
+							// If an error occured, bail.
+							if ( is_wp_error( $result ) ) {
+								/**
+								 * Perform any actions when refreshing an expired access token fails.
+								 *
+								 * @since   3.1.0
+								 *
+								 * @param   string    $client_id  OAuth Client ID.
+								 */
+								do_action( 'convertkit_api_request_error_refresh_token_failed', $this->client_id );
+
+								return $result;
+							}
+
+							// Attempt the request again, now we have a new access token.
+							return $this->request( $endpoint, $method, $params, false );
 					}
-
-					// Don't automatically refresh the expired access token if we're not on a production environment.
-					// This prevents the same ConvertKit account used on both a staging and production site from
-					// reaching a race condition where the staging site refreshes the token first, resulting in
-					// the production site unable to later refresh its same expired access token.
-					if ( ! $this->is_production_site() ) {
-						break;
-					}
-
-					// Refresh the access token.
-					$result = $this->refresh_token();
-
-					// If an error occured, bail.
-					if ( is_wp_error( $result ) ) {
-						/**
-						 * Perform any actions when refreshing an expired access token fails.
-						 *
-						 * @since   3.1.0
-						 *
-						 * @param   WP_Error  $result     Error.
-						 * @param   string    $client_id  OAuth Client ID.
-						 */
-						do_action( 'convertkit_api_request_refresh_token_error', $result, $this->client_id );
-
-						return $result;
-					}
-
-					// Attempt the request again, now we have a new access token.
-					return $this->request( $endpoint, $method, $params, false );
+					break;
 
 				// If a rate limit was hit, maybe try again.
 				case 429:
