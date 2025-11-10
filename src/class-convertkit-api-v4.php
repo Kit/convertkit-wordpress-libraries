@@ -381,7 +381,7 @@ class ConvertKit_API_V4 {
 			/**
 			 * Perform any actions when obtaining an access token fails.
 			 *
-			 * @since   3.1.0
+			 * @since   2.1.1
 			 *
 			 * @param   WP_Error  $result     Error from API.
 			 * @param   string    $client_id  OAuth Client ID.
@@ -429,7 +429,7 @@ class ConvertKit_API_V4 {
 			/**
 			 * Perform any actions when refreshing an expired access token fails.
 			 *
-			 * @since   3.1.0
+			 * @since   2.1.1
 			 *
 			 * @param   WP_Error  $result     Error from API.
 			 * @param   string    $client_id  OAuth Client ID.
@@ -1487,7 +1487,7 @@ class ConvertKit_API_V4 {
 							/**
 							 * Perform any actions when an invalid access token was used.
 							 *
-							 * @since   3.1.0
+							 * @since   2.1.1
 							 *
 							 * @param   string    $client_id  OAuth Client ID.
 							 */
