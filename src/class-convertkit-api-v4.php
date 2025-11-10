@@ -377,6 +377,17 @@ class ConvertKit_API_V4 {
 		// If an error occured, log and return it now.
 		if ( is_wp_error( $result ) ) {
 			$this->log( 'API: Error: ' . $result->get_error_message() );
+
+			/**
+			 * Perform any actions when obtaining an access token fails.
+			 *
+			 * @since   3.1.0
+			 *
+			 * @param   WP_Error  $result     Error from API.
+			 * @param   string    $client_id  OAuth Client ID.
+			 */
+			do_action( 'convertkit_api_get_access_token_error', $result, $this->client_id );
+
 			return $result;
 		}
 
@@ -414,6 +425,17 @@ class ConvertKit_API_V4 {
 		// If an error occured, log and return it now.
 		if ( is_wp_error( $result ) ) {
 			$this->log( 'API: Error: ' . $result->get_error_message() );
+
+			/**
+			 * Perform any actions when refreshing an expired access token fails.
+			 *
+			 * @since   3.1.0
+			 *
+			 * @param   WP_Error  $result     Error from API.
+			 * @param   string    $client_id  OAuth Client ID.
+			 */
+			do_action( 'convertkit_api_refresh_token_error', $result, $this->client_id );
+
 			return $result;
 		}
 
@@ -1443,7 +1465,25 @@ class ConvertKit_API_V4 {
 				// and attempt to re-attempt the request.
 				case 401:
 					switch ( $error ) {
-						case 'The access token is invalid':
+						case 'The access token expired':
+							// Attempt to refresh the access token.
+							$result = $this->refresh_token();
+
+							// If an error occured, bail.
+							if ( is_wp_error( $result ) ) {
+								return $result;
+							}
+
+							// Attempt the request again, now we have a new access token.
+							return $this->request( $endpoint, $method, $params, false );
+
+						default:
+							$error = new WP_Error(
+								'convertkit_api_error',
+								$error,
+								$http_response_code
+							);
+
 							/**
 							 * Perform any actions when an invalid access token was used.
 							 *
@@ -1451,29 +1491,10 @@ class ConvertKit_API_V4 {
 							 *
 							 * @param   string    $client_id  OAuth Client ID.
 							 */
-							do_action( 'convertkit_api_request_error_access_token_invalid', $this->client_id );
-							break;
+							do_action( 'convertkit_api_access_token_invalid', $error, $this->client_id );
 
-						case 'The access token expired':
-							// Attempt to refresh the access token.
-							$result = $this->refresh_token();
-
-							// If an error occured, bail.
-							if ( is_wp_error( $result ) ) {
-								/**
-								 * Perform any actions when refreshing an expired access token fails.
-								 *
-								 * @since   3.1.0
-								 *
-								 * @param   string    $client_id  OAuth Client ID.
-								 */
-								do_action( 'convertkit_api_request_error_refresh_token_failed', $this->client_id );
-
-								return $result;
-							}
-
-							// Attempt the request again, now we have a new access token.
-							return $this->request( $endpoint, $method, $params, false );
+							// Return error.
+							return $error;
 					}
 					break;
 
