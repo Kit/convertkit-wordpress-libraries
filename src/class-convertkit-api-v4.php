@@ -1505,27 +1505,6 @@ class ConvertKit_API_V4 {
 	}
 
 	/**
-	 * Helper method to determine the WordPress environment type, checking
-	 * if the wp_get_environment_type() function exists in WordPress (versions
-	 * older than WordPress 5.5 won't have this function).
-	 *
-	 * @since   2.0.2
-	 *
-	 * @return  bool
-	 */
-	private function is_production_site() {
-
-		// If the WordPress wp_get_environment_type() function isn't available,
-		// assume this is a production site.
-		if ( ! function_exists( 'wp_get_environment_type' ) ) {
-			return true;
-		}
-
-		return ( wp_get_environment_type() === 'production' );
-
-	}
-
-	/**
 	 * Inspects the given API response for errors, returning them as a string.
 	 *
 	 * @since   2.0.0
