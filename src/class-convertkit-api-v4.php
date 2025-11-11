@@ -1475,7 +1475,7 @@ class ConvertKit_API_V4 {
 							// Attempt the request again, now we have a new access token.
 							return $this->request( $endpoint, $method, $params, false );
 
-						default:
+						case 'The access token is invalid':
 							$error = new WP_Error(
 								'convertkit_api_error',
 								$error,
@@ -1494,6 +1494,13 @@ class ConvertKit_API_V4 {
 
 							// Return error.
 							return $error;
+
+						default:
+							return new WP_Error(
+								'convertkit_api_error',
+								$error,
+								$http_response_code
+							);
 					}
 
 				case 429:
