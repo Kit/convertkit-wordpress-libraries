@@ -529,32 +529,6 @@ class APITest extends WPTestCase
 	}
 
 	/**
-	 * Test that making a call with an expired access token results in refresh_token()
-	 * not being automatically called, when the WordPress site isn't a production site.
-	 *
-	 * @since   2.0.2
-	 *
-	 * @return void
-	 */
-	public function testRefreshTokenWhenAccessTokenExpiredErrorOnNonProductionSite()
-	{
-		// If the refresh token action in the libraries is triggered when calling get_account(), the test failed.
-		add_action(
-			'convertkit_api_refresh_token',
-			function() {
-				$this->fail('`convertkit_api_refresh_token` was triggered when calling `get_account` with an expired access token on a non-production site.');
-			}
-		);
-
-		// Filter requests to mock the token expiry and refreshing the token.
-		add_filter( 'pre_http_request', array( $this, 'mockAccessTokenExpiredResponse' ), 10, 3 );
-		add_filter( 'pre_http_request', array( $this, 'mockRefreshTokenResponse' ), 10, 3 );
-
-		// Run request, which will trigger the above filters as if the token expired and refreshes automatically.
-		$result = $this->api->get_account();
-	}
-
-	/**
 	 * Test that supplying no API credentials to the API class returns a WP_Error.
 	 *
 	 * @since   2.0.2

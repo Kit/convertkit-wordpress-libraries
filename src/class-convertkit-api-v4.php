@@ -377,6 +377,17 @@ class ConvertKit_API_V4 {
 		// If an error occured, log and return it now.
 		if ( is_wp_error( $result ) ) {
 			$this->log( 'API: Error: ' . $result->get_error_message() );
+
+			/**
+			 * Perform any actions when obtaining an access token fails.
+			 *
+			 * @since   2.1.1
+			 *
+			 * @param   WP_Error  $result     Error from API.
+			 * @param   string    $client_id  OAuth Client ID.
+			 */
+			do_action( 'convertkit_api_get_access_token_error', $result, $this->client_id );
+
 			return $result;
 		}
 
@@ -414,6 +425,17 @@ class ConvertKit_API_V4 {
 		// If an error occured, log and return it now.
 		if ( is_wp_error( $result ) ) {
 			$this->log( 'API: Error: ' . $result->get_error_message() );
+
+			/**
+			 * Perform any actions when refreshing an expired access token fails.
+			 *
+			 * @since   2.1.1
+			 *
+			 * @param   WP_Error  $result     Error from API.
+			 * @param   string    $client_id  OAuth Client ID.
+			 */
+			do_action( 'convertkit_api_refresh_token_error', $result, $this->client_id );
+
 			return $result;
 		}
 
@@ -1432,39 +1454,55 @@ class ConvertKit_API_V4 {
 
 		// Return the API error message as a WP_Error if the HTTP response code is a 4xx code.
 		if ( $http_response_code >= 400 ) {
+
 			// Define the error message.
 			$error = $this->get_error_message_string( $response );
 
 			$this->log( 'API: Error: ' . $error );
 
 			switch ( $http_response_code ) {
-				// If the HTTP response code is 401, and the error matches 'The access token expired', refresh the access token now
-				// and re-attempt the request.
 				case 401:
-					if ( $error !== 'The access token expired' ) {
-						break;
+					switch ( $error ) {
+						case 'The access token expired':
+							// Attempt to refresh the access token.
+							$result = $this->refresh_token();
+
+							// If an error occured, bail.
+							if ( is_wp_error( $result ) ) {
+								return $result;
+							}
+
+							// Attempt the request again, now we have a new access token.
+							return $this->request( $endpoint, $method, $params, false );
+
+						case 'The access token is invalid':
+							$error = new WP_Error(
+								'convertkit_api_error',
+								$error,
+								$http_response_code
+							);
+
+							/**
+							 * Perform any actions when an invalid access token was used.
+							 *
+							 * @since   2.1.1
+							 *
+							 * @param   WP_Error  $error      WP_Error object.
+							 * @param   string    $client_id  OAuth Client ID.
+							 */
+							do_action( 'convertkit_api_access_token_invalid', $error, $this->client_id );
+
+							// Return error.
+							return $error;
+
+						default:
+							return new WP_Error(
+								'convertkit_api_error',
+								$error,
+								$http_response_code
+							);
 					}
 
-					// Don't automatically refresh the expired access token if we're not on a production environment.
-					// This prevents the same ConvertKit account used on both a staging and production site from
-					// reaching a race condition where the staging site refreshes the token first, resulting in
-					// the production site unable to later refresh its same expired access token.
-					if ( ! $this->is_production_site() ) {
-						break;
-					}
-
-					// Refresh the access token.
-					$result = $this->refresh_token();
-
-					// If an error occured, bail.
-					if ( is_wp_error( $result ) ) {
-						return $result;
-					}
-
-					// Attempt the request again, now we have a new access token.
-					return $this->request( $endpoint, $method, $params, false );
-
-				// If a rate limit was hit, maybe try again.
 				case 429:
 					// If retry on rate limit hit is disabled, return a WP_Error.
 					if ( ! $retry_if_rate_limit_hit ) {
@@ -1488,27 +1526,6 @@ class ConvertKit_API_V4 {
 		}
 
 		return $response;
-
-	}
-
-	/**
-	 * Helper method to determine the WordPress environment type, checking
-	 * if the wp_get_environment_type() function exists in WordPress (versions
-	 * older than WordPress 5.5 won't have this function).
-	 *
-	 * @since   2.0.2
-	 *
-	 * @return  bool
-	 */
-	private function is_production_site() {
-
-		// If the WordPress wp_get_environment_type() function isn't available,
-		// assume this is a production site.
-		if ( ! function_exists( 'wp_get_environment_type' ) ) {
-			return true;
-		}
-
-		return ( wp_get_environment_type() === 'production' );
 
 	}
 
