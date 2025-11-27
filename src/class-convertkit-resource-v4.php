@@ -348,7 +348,7 @@ class ConvertKit_Resource_V4 {
 
 		// Bail if no API class was defined.
 		if ( ! $this->api ) {
-			return new WP_Error( 'convertkit_resource_refresh_error', 'Connect the plugin to your ConvertKit account to refresh resources.' );
+			return new WP_Error( 'convertkit_resource_refresh_error', 'Connect the Plugin to your Kit account to refresh resources.' );
 		}
 
 		// Fetch resources.
