@@ -116,14 +116,12 @@ class ConvertKit_Resource_V4 {
 		// a last query time.  This handles upgrades from < 1.9.7.4 where resources
 		// would never expire.
 		if ( ! $this->last_queried ) {
-			$this->refresh();
-			return;
+			return $this->refresh();
 		}
 
 		// If the resources have expired, refresh them now.
 		if ( time() > ( $this->last_queried + $this->cache_duration ) ) {
-			$this->refresh();
-			return;
+			return $this->refresh();
 		}
 
 	}
@@ -344,13 +342,13 @@ class ConvertKit_Resource_V4 {
 	 *
 	 * @since   1.0.0
 	 *
-	 * @return  bool|WP_Error|array
+	 * @return  WP_Error|array
 	 */
 	public function refresh() {
 
 		// Bail if no API class was defined.
 		if ( ! $this->api ) {
-			return false;
+			return new WP_Error( 'convertkit_resource_refresh_error', 'Connect the Plugin to your Kit account to refresh resources.' );
 		}
 
 		// Fetch resources.
