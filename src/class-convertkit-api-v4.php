@@ -1489,7 +1489,7 @@ class ConvertKit_API_V4 {
 							 *
 							 * @param   WP_Error  $error                   WP_Error object.
 							 * @param   string    $client_id               OAuth Client ID.
-		 					 * @param   string    $invalid_access_token    Existing (invalid) Access Token.
+							 * @param   string    $invalid_access_token    Existing (invalid) Access Token.
 							 */
 							do_action( 'convertkit_api_access_token_invalid', $error, $this->client_id, $this->access_token );
 
