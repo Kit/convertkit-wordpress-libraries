@@ -14,7 +14,7 @@
  */
 class ConvertKit_API_V4 {
 
-	use ConvertKit_API_Traits;
+	use ConvertKit_API\ConvertKit_API_Traits;
 
 	/**
 	 * The SDK version.
@@ -1277,6 +1277,29 @@ class ConvertKit_API_V4 {
 		return $this->get_body_html( $html );
 
 	}
+
+	/**
+     * Sets the type attribute for script elements to 'text/javascript',
+     * where Cloudflare prepends a random string to the type attribute.
+     *
+     * @param \DOMNodeList<\DOMElement> $elements Elements.
+     *
+     * @since 2.0.4
+     *
+     * @return void
+     */
+    public function convert_script_type(\DOMNodeList $elements)
+    {
+        foreach ($elements as $element) {
+            // Skip if the attribute is not prepended with a Cloudflare random string
+            if (strpos($element->getAttribute('type'), '-text/javascript') === false) {
+                continue;
+            }
+
+            // Set attribute to 'text/javascript'.
+            $element->setAttribute('type', 'text/javascript');
+        }
+    }
 
 	/**
 	 * Determines if the given string is JSON.
