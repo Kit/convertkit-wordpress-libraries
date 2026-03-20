@@ -11,7 +11,9 @@ parameters:
         - src/
 
     # Paths to exclude
+    # API Traits are excluded as they are statically analysed in the Kit PHP SDK
     excludePaths:
+        - src/class-convertkit-api-traits.php
         - src/views/
 
     # Location of WordPress Plugins for PHPStan to scan, building symbols.
@@ -20,6 +22,7 @@ parameters:
 
     # Location of constants for PHPStan to scan, building symbols.
     scanFiles:
+        - src/class-convertkit-api-traits.php
         - /home/runner/work/convertkit-wordpress-libraries/convertkit-wordpress-libraries/wordpress/wp-config.php
 
     # Don't report unmatched ignored errors on older PHP versions (7.2, 7.3)
