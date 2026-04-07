@@ -1362,9 +1362,11 @@ trait ConvertKit_API_Traits
         return $this->get(
             sprintf('broadcasts/%s/clicks', $id),
             $this->build_total_count_and_pagination_params(
-                after_cursor: $after_cursor,
-                before_cursor: $before_cursor,
-                per_page: $per_page
+                [],
+                false,
+                $after_cursor,
+                $before_cursor,
+                $per_page
             )
         );
     }
