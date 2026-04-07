@@ -5,8 +5,6 @@
  * @author ConvertKit
  */
 
-namespace ConvertKit_API;
-
 /**
  * ConvertKit API Traits
  */
