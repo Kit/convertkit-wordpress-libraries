@@ -529,28 +529,41 @@ class APITest extends WPTestCase
 	}
 
 	/**
-	 * Test that revoke_token() returns the expected data.
+	 * Test that the access token and refresh token are revoked when revoke_token() is called.
 	 *
 	 * @since   2.1.4
-	 *
-	 * @return void
 	 */
 	public function testRevokeToken()
 	{
-		// Add mock handler for this API request, as this results in the
-		// access token being revoked, which would result in
-		// other tests breaking due to changed tokens.
-		$this->mockResponses(
-			httpCode: 200,
-			httpMessage: 'OK',
-			body: wp_json_encode(
-				array()
-			)
+		// Initialize the API without an access token or refresh token.
+		$api = new \ConvertKit_API_V4(
+			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI']
 		);
 
-		$result = $this->api->revoke_token();
-		$this->assertNotInstanceOf(\WP_Error::class, $result);
-		$this->assertIsArray($result);
+		// Generate an access token by API key and secret.
+		$result = $api->get_access_token_by_api_key_and_secret(
+			$_ENV['CONVERTKIT_API_KEY'],
+			$_ENV['CONVERTKIT_API_SECRET'],
+			wp_generate_password( 10, false ) // Random tenant name to produce a token for this request only.
+		);
+
+		// Initialize the API with the access token and refresh token.
+		$api = new \ConvertKit_API_V4(
+			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			$result['oauth']['access_token'],
+			$result['oauth']['refresh_token']
+		);
+
+		// Confirm the token works when making an authenticated request.
+		$this->assertNotInstanceOf( 'WP_Error', $api->get_account() );
+
+		// Revoke the access token.
+		$api->revoke_token();
+
+		// Confirm the token no longer works when making an authenticated request.
+		$this->assertInstanceOf( 'WP_Error', $api->get_account() );
 	}
 
 	/**
