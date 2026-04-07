@@ -529,6 +529,31 @@ class APITest extends WPTestCase
 	}
 
 	/**
+	 * Test that revoke_token() returns the expected data.
+	 *
+	 * @since   2.1.4
+	 *
+	 * @return void
+	 */
+	public function testRevokeToken()
+	{
+		// Add mock handler for this API request, as this results in the
+		// access token being revoked, which would result in
+		// other tests breaking due to changed tokens.
+		$this->mockResponses(
+			httpCode: 200,
+			httpMessage: 'OK',
+			body: wp_json_encode(
+				array()
+			)
+		);
+
+		$result = $this->api->revoke_token();
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
+		$this->assertIsArray($result);
+	}
+
+	/**
 	 * Test that supplying no API credentials to the API class returns a WP_Error.
 	 *
 	 * @since   2.0.2

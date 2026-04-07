@@ -89,6 +89,7 @@ class ConvertKit_API_V4 {
 	 */
 	protected $api_endpoints_oauth = array(
 		'token',
+		'revoke',
 	);
 
 	/**
@@ -458,6 +459,62 @@ class ConvertKit_API_V4 {
 		 * @param   string  $previous_refresh_token  Existing Refresh Token.
 		 */
 		do_action( 'convertkit_api_refresh_token', $result, $this->client_id, $previous_access_token, $previous_refresh_token );
+
+		// Return.
+		return $result;
+
+	}
+
+	/**
+	 * Revokes the current access token.
+	 *
+	 * @since   2.1.4
+	 */
+	public function revoke_token() {
+
+		$result = $this->post(
+			'revoke',
+			array(
+				'client_id'    => $this->client_id,
+				'access_token' => $this->access_token,
+			)
+		);
+
+		// If an error occured, log and return it now.
+		if ( is_wp_error( $result ) ) {
+			$this->log( 'API: Error: ' . $result->get_error_message() );
+
+			/**
+			 * Perform any actions when revoking an access token fails.
+			 *
+			 * @since   2.1.4
+			 *
+			 * @param   WP_Error  $result     Error from API.
+			 * @param   string    $client_id  OAuth Client ID.
+			 */
+			do_action( 'convertkit_api_revoke_token_error', $result, $this->client_id );
+
+			return $result;
+		}
+
+		// Store existing access and refresh tokens.
+		$previous_access_token  = $this->access_token;
+		$previous_refresh_token = $this->refresh_token;
+
+		// Remove access and refresh tokens from this class.
+		$this->access_token  = '';
+		$this->refresh_token = '';
+
+		/**
+		 * Perform any actions when the access token is revoked, such as deleting them from the database.
+		 *
+		 * @since   2.1.4
+		 *
+		 * @param   string  $client_id               OAuth Client ID.
+		 * @param   string  $previous_access_token   Existing Access Token.
+		 * @param   string  $previous_refresh_token  Existing Refresh Token.
+		 */
+		do_action( 'convertkit_api_revoke_token', $this->client_id, $previous_access_token, $previous_refresh_token );
 
 		// Return.
 		return $result;
