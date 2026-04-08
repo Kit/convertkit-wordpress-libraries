@@ -529,11 +529,11 @@ class APITest extends WPTestCase
 	}
 
 	/**
-	 * Test that the access token and refresh token are revoked when revoke_token() is called.
+	 * Test that the access token and refresh token are revoked when revoke_tokens() is called.
 	 *
 	 * @since   2.1.4
 	 */
-	public function testRevokeToken()
+	public function testRevokeTokens()
 	{
 		// Initialize the API without an access token or refresh token.
 		$api = new \ConvertKit_API_V4(
@@ -559,11 +559,24 @@ class APITest extends WPTestCase
 		// Confirm the token works when making an authenticated request.
 		$this->assertNotInstanceOf( 'WP_Error', $api->get_account() );
 
-		// Revoke the access token.
-		$api->revoke_token();
+		// Revoke the access and refresh tokens.
+		$api->revoke_tokens();
 
-		// Confirm the token no longer works when making an authenticated request.
+		// Initialize the API with the (now revoked) access token and refresh token.
+		// revoke_tokens() will have removed the access token and refresh token from the API class, so we need to provide them again
+		// to test they're revoked.
+		$api = new \ConvertKit_API_V4(
+			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			$result['oauth']['access_token'],
+			$result['oauth']['refresh_token']
+		);
+
+		// Confirm attempting to use the revoked access token no longer works.
 		$this->assertInstanceOf( 'WP_Error', $api->get_account() );
+
+		// Confirm attempting to use the revoked refresh token no longer works.
+		$this->assertInstanceOf( 'WP_Error', $api->refresh_token() );
 	}
 
 	/**
