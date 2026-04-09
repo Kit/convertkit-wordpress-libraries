@@ -59,7 +59,7 @@ class ConvertKit_Resource_V4 {
 	 *
 	 * @var     WP_Error|array|bool|null
 	 */
-	public $resources = array();
+	public $resources;
 
 	/**
 	 * The key to use when alphabetically sorting resources.
