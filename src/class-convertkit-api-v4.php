@@ -14,7 +14,7 @@
  */
 class ConvertKit_API_V4 {
 
-	use ConvertKit_API\ConvertKit_API_Traits;
+	use ConvertKit_API_Traits;
 
 	/**
 	 * The SDK version.
