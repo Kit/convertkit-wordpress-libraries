@@ -699,7 +699,8 @@ class ResourceTest extends WPTestCase
 	}
 
 	/**
-	 * Defines an array of resources when mocking invalid resource data in tests.
+	 * Defines an array of resources when mocking resource data in tests,
+	 * in a format stored in the WordPress Plugins prior to using these Libraries.
 	 *
 	 * @since   2.1.6
 	 */
