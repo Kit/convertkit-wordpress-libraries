@@ -259,6 +259,34 @@ class ResourceTest extends WPTestCase
 	}
 
 	/**
+	 * Tests that the get_by() function returns false when queried with invalid resource data.
+	 *
+	 * @since   2.1.6
+	 */
+	public function testGetByWithInvalidResourceData()
+	{
+		// Mock invalid resource data.
+		$this->mockInvalidData();
+
+		// Assert result is false.
+		$this->assertFalse($this->resource->get_by('name', 'Z Name'));
+	}
+
+	/**
+	 * Tests that the exist() function returns false when queried with invalid resource data.
+	 *
+	 * @since   2.1.6
+	 */
+	public function testExistWithInvalidResourceData()
+	{
+		// Mock invalid resource data.
+		$this->mockInvalidData();
+
+		// Assert result is false.
+		$this->assertFalse($this->resource->exist());
+	}
+
+	/**
 	 * Tests that the refresh() function for Forms returns resources in an array, and that they are
 	 * in alphabetical ascending order by default.
 	 *
@@ -667,6 +695,19 @@ class ResourceTest extends WPTestCase
 				'title'        => 'A Name', // 'title' used by posts.
 				'published_at' => '2022-05-03T14:51:50.000Z', // used by posts.
 			],
+		];
+	}
+
+	/**
+	 * Defines an array of resources when mocking resource data in tests,
+	 * in a format stored in the WordPress Plugins prior to using these Libraries.
+	 *
+	 * @since   2.1.6
+	 */
+	private function mockInvalidData()
+	{
+		$this->resource->resources = [
+			2780977 => 'Resource',
 		];
 	}
 }
