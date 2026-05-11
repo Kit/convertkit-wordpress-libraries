@@ -181,14 +181,14 @@ class ConvertKit_Resource_V4 {
 	 */
 	public function get_by( $key, $value ) {
 
+		// Don't attempt sorting if no resources exist.
+		if ( ! $this->exist() ) {
+			return false;
+		}
+
 		// Don't mutate the underlying resources, so multiple calls to get()
 		// with different order_by and order properties are supported.
 		$resources = $this->resources;
-
-		// Don't attempt sorting if no resources exist.
-		if ( ! $this->exist() ) {
-			return $resources;
-		}
 
 		foreach ( $resources as $id => $resource ) {
 			// Remove this resource if it doesn't have the array key.
@@ -329,6 +329,21 @@ class ConvertKit_Resource_V4 {
 		}
 
 		if ( is_null( $this->resources ) ) {
+			return false;
+		}
+
+		// If the resources are not an array, no resources exist.
+		if ( ! is_array( $this->resources ) ) {
+			return false;
+		}
+
+		// Ignore cached resources stored in the options table if they are a flat array
+		// that originates from between 1.6.0 and 1.9.5.2 of the Plugin
+		// i.e. [id => name], rather than [id => [id => '...', name => '...', ...]].
+		// The Plugin's upgrade routine must handle converting the flat array to the new array format, but the
+		// resource classes are typically loaded before this happens, so this check is necessary to avoid
+		// fatal errors when a user upgrades from 1.6.0...1.9.5.2 to 1.9.6 or higher.
+		if ( ! is_array( reset( $this->resources ) ) ) {
 			return false;
 		}
 
