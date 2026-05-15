@@ -1379,11 +1379,11 @@ class APITest extends WPTestCase
 	 *
 	 * @return void
 	 */
-	public function testGetFormSubscriptionsWithBouncedSubscriberState()
+	public function testGetFormSubscriptionsWithCancelledSubscriberState()
 	{
 		$result = $this->api->get_form_subscriptions(
 			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
-			subscriber_state: 'bounced'
+			subscriber_state: 'cancelled'
 		);
 
 		// Assert subscribers and pagination exist.
@@ -1391,7 +1391,7 @@ class APITest extends WPTestCase
 		$this->assertPaginationExists($result);
 
 		// Check the correct subscribers were returned.
-		$this->assertEquals($result['subscribers'][0]['state'], 'bounced');
+		$this->assertEquals($result['subscribers'][0]['state'], 'cancelled');
 	}
 
 	/**
@@ -2374,11 +2374,11 @@ class APITest extends WPTestCase
 	 *
 	 * @return void
 	 */
-	public function testGetSequenceSubscriptionsWithBouncedSubscriberState()
+	public function testGetSequenceSubscriptionsWithCancelledSubscriberState()
 	{
 		$result = $this->api->get_sequence_subscriptions(
 			sequence_id: $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
-			subscriber_state: 'bounced'
+			subscriber_state: 'cancelled'
 		);
 
 		// Assert subscribers and pagination exist.
@@ -2386,7 +2386,7 @@ class APITest extends WPTestCase
 		$this->assertPaginationExists($result);
 
 		// Check the correct subscribers were returned.
-		$this->assertEquals($result['subscribers'][0]['state'], 'bounced');
+		$this->assertEquals($result['subscribers'][0]['state'], 'cancelled');
 	}
 
 	/**
@@ -3213,11 +3213,11 @@ class APITest extends WPTestCase
 	 *
 	 * @return void
 	 */
-	public function testGetTagSubscriptionsWithBouncedSubscriberState()
+	public function testGetTagSubscriptionsWithCancelledSubscriberState()
 	{
 		$result = $this->api->get_tag_subscriptions(
 			tag_id: (int) $_ENV['CONVERTKIT_API_TAG_ID'],
-			subscriber_state: 'bounced'
+			subscriber_state: 'cancelled'
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3225,7 +3225,7 @@ class APITest extends WPTestCase
 		$this->assertPaginationExists($result);
 
 		// Check the correct subscribers were returned.
-		$this->assertEquals($result['subscribers'][0]['state'], 'bounced');
+		$this->assertEquals($result['subscribers'][0]['state'], 'cancelled');
 	}
 
 
@@ -3486,16 +3486,16 @@ class APITest extends WPTestCase
 
 	/**
 	 * Test that get_subscribers() returns the expected data
-	 * when the subscription status is bounced.
+	 * when the subscription status is cancelled.
 	 *
 	 * @since   1.0.0
 	 *
 	 * @return void
 	 */
-	public function testGetSubscribersWithBouncedSubscriberState()
+	public function testGetSubscribersWithCancelledSubscriberState()
 	{
 		$result = $this->api->get_subscribers(
-			subscriber_state: 'bounced'
+			subscriber_state: 'cancelled'
 		);
 
 		// Assert subscribers and pagination exist.
@@ -3503,7 +3503,7 @@ class APITest extends WPTestCase
 		$this->assertPaginationExists($result);
 
 		// Check the correct subscribers were returned.
-		$this->assertEquals($result['subscribers'][0]['state'], 'bounced');
+		$this->assertEquals($result['subscribers'][0]['state'], 'cancelled');
 	}
 
 	/**
