@@ -4245,14 +4245,14 @@ class APITest extends WPTestCase
 	 */
 	public function testUnsubscribeByEmail()
 	{
-		// Avoid a rate limit due to previous tests.
-		sleep(2);
-
 		// Add a subscriber.
 		$emailAddress = $this->generateEmailAddress();
 		$result       = $this->api->create_subscriber($emailAddress);
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
+
+		// Wait a moment to ensure subscriber is created.
+		sleep(3);
 
 		// Unsubscribe.
 		$this->assertNull($this->api->unsubscribe_by_email($emailAddress));
@@ -4300,6 +4300,9 @@ class APITest extends WPTestCase
 		$result       = $this->api->create_subscriber($emailAddress);
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
 		$this->assertIsArray($result);
+
+		// Wait a moment to ensure subscriber is created.
+		sleep(3);
 
 		// Unsubscribe.
 		$this->assertNull($this->api->unsubscribe($result['subscriber']['id']));
