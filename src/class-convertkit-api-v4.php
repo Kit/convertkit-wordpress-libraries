@@ -815,7 +815,7 @@ class ConvertKit_API_V4 {
 		int $per_page = 100
 	) {
 		return $this->get(
-			'landing_pages',
+			'legacy_landing_pages',
 			$this->build_total_count_and_pagination_params(
 				array(
 					'type' => 'embed',
@@ -847,7 +847,7 @@ class ConvertKit_API_V4 {
 		int $per_page = 100
 	) {
 		return $this->get(
-			'landing_pages',
+			'legacy_landing_pages',
 			$this->build_total_count_and_pagination_params(
 				array(
 					'type' => 'hosted',
