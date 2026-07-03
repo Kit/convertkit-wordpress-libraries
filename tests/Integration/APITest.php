@@ -3924,7 +3924,7 @@ class APITest extends WPTestCase
 	}
 
 	/**
-	 * Test that create_subscriber() returns a WP_Error
+	 * Test that create_subscriber() returns the expected data
 	 * when an invalid custom field is included.
 	 *
 	 * @since   2.0.0
@@ -3940,8 +3940,14 @@ class APITest extends WPTestCase
 				'not_a_custom_field' => 'value',
 			]
 		);
-		$this->assertInstanceOf(\WP_Error::class, $result);
-		$this->assertEquals($result->get_error_code(), $this->errorCode);
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
+		$this->assertIsArray($result);
+
+		// Set subscriber_id to ensure subscriber is unsubscribed after test.
+		$this->subscriber_ids[] = $result['subscriber']['id'];
+
+		// Assert subscriber exists with correct data.
+		$this->assertEquals($result['subscriber']['email_address'], $emailAddress);
 	}
 
 	/**
