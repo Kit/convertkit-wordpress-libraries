@@ -10,7 +10,7 @@ If you discover a security vulnerability, please report via any of the below:
 - [GitHub](https://github.com/Kit/convertkit-wordpress-libraries/security/advisories)
 - [Email](mailto:security@kit.com)
 
-Please do **not** report security issues publicly via GitHub issues or discussions. Security reports sent via the above channels be acknowledged within 48 hours.
+Please do **not** report security issues publicly via GitHub issues or discussions. Security reports sent via the above channels will be acknowledged within 48 hours.
 
 ## Security Disclosure Process
 
@@ -24,8 +24,8 @@ When reporting a security vulnerability, please include:
 
 ## Security Response Timeline
 
-- **Initial Response**: Within 48 hours of receiving the report
-- **Investigation**: We will investigate and validate the reported vulnerability
+- **Initial Response**: Acknowledgement within 48 hours of receiving the report
+- **Investigation**: Investigation and validation of the reported vulnerability
 - **Fix Development**: Development of a patch or mitigation strategy
 - **Release**: Coordinated disclosure and release of security update
-- **Public Disclosure**: After users have had time to upgrade
+- **Public Disclosure**: Public announcement after users have had time to upgrade
