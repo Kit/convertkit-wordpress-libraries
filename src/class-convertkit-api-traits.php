@@ -756,10 +756,10 @@ trait ConvertKit_API_Traits
         string $delay_unit,
         ?string $preview_text = null,
         ?string $content = null,
-        int|null $email_template_id = null,
+        ?int $email_template_id = null,
         bool $published = false,
-        array|null $send_days = null,
-        int|null $position = null,
+        ?array $send_days = null,
+        ?int $position = null
     ) {
         $options = [
             'subject'     => $subject,
@@ -838,14 +838,14 @@ trait ConvertKit_API_Traits
         int $sequence_id,
         int $email_id,
         ?string $subject = null,
-        int|null $delay_value = null,
+        ?int $delay_value = null,
         ?string $delay_unit = null,
         ?string $preview_text = null,
         ?string $content = null,
-        int|null $email_template_id = null,
-        bool|null $published = null,
-        array|null $send_days = null,
-        int|null $position = null,
+        ?int $email_template_id = null,
+        ?bool $published = null,
+        ?array $send_days = null,
+        ?int $position = null
     ) {
         // Build parameters.
         $options = ['send_days' => $send_days];
@@ -2073,9 +2073,11 @@ trait ConvertKit_API_Traits
         return $this->get(
             sprintf('broadcasts/%s/clicks', $id),
             $this->build_total_count_and_pagination_params(
-                after_cursor: $after_cursor,
-                before_cursor: $before_cursor,
-                per_page: $per_page
+                array(),
+                false,
+                $after_cursor,
+                $before_cursor,
+                $per_page
             )
         );
     }
@@ -2770,7 +2772,7 @@ trait ConvertKit_API_Traits
      * Performs a POST request to the API.
      *
      * @param string                                                                                                            $endpoint API Endpoint.
-     * @param array<string, bool|integer|float|?string|array<int|string, array<string|mixed>|boolean|integer|float|string>> $args     Request arguments.
+     * @param array<string, bool|integer|float|string|null|array<int|string, array<string|mixed>|boolean|integer|float|string>> $args     Request arguments.
      *
      * @return false|mixed
      */
@@ -2783,7 +2785,7 @@ trait ConvertKit_API_Traits
      * Performs a PUT request to the API.
      *
      * @param string                                                                                                   $endpoint API Endpoint.
-     * @param array<string, bool|integer|float|?string|array<int|string, array<int>|boolean|integer|float|string>> $args     Request arguments.
+     * @param array<string, bool|integer|float|string|null|array<int|string, array<int>|boolean|integer|float|string>> $args     Request arguments.
      *
      * @return false|mixed
      */
@@ -2796,7 +2798,7 @@ trait ConvertKit_API_Traits
      * Performs a DELETE request to the API.
      *
      * @param string                                                                                                                  $endpoint API Endpoint.
-     * @param array<string, bool|integer|float|?string|array<int|string, array<string, int|string>|boolean|integer|float|string>> $args     Request arguments.
+     * @param array<string, bool|integer|float|string|null|array<int|string, array<string, int|string>|boolean|integer|float|string>> $args     Request arguments.
      *
      * @return false|mixed
      */
@@ -2810,7 +2812,7 @@ trait ConvertKit_API_Traits
      *
      * @param string                                                                                                          $endpoint API Endpoint.
      * @param string                                                                                                          $method   Request method.
-     * @param array<string, bool|integer|float|?string|array<int|string, bool|integer|float|string|array<string, mixed>>> $args     Request arguments.
+     * @param array<string, bool|integer|float|string|null|array<int|string, bool|integer|float|string|array<string, mixed>>> $args     Request arguments.
      *
      * @throws \Exception If JSON encoding arguments failed.
      *
