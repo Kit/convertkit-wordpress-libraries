@@ -21,7 +21,7 @@ class ConvertKit_API_V4 {
 	 *
 	 * @var string
 	 */
-	public const VERSION = '2.0.0';
+	public const VERSION = '2.6.0';
 
 	/**
 	 * Redirect URI.
