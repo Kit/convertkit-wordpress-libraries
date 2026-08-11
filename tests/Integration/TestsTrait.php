@@ -6863,7 +6863,7 @@ trait TestsTrait
      */
     public function testGetResourceLandingPage()
     {
-        $markup = $this->api->get_resource($_ENV['CONVERTKIT_API_LANDING_PAGE_URL']);
+        $markup = $this->api->get_resource($_ENV['CONVERTKIT_API_LANDING_PAGE_CHARACTER_ENCODING_URL']);
 
         // Assert that the markup is HTML.
         $this->assertTrue($this->isHtml($markup));
