@@ -2,16 +2,9 @@
 namespace Helper\WPUnit;
 
 /**
- * WP Libs' `request()` returns associative arrays (WordPress convention);
- * the PHP SDK returns `stdClass` objects (Guzzle convention). The shared
- * `TestsTrait.php` is copied verbatim from the SDK and therefore uses object
- * access throughout ($result->forms, $result->pagination->end_cursor, etc.).
- *
- * This proxy exists solely to bridge that gap in test context — it lets the
- * trait run unmodified against WP Libs. Plugin code that consumes WP Libs
- * in production is unaffected; only the test suite ever sees the proxy.
- *
- * `WP_Error` and other non-array returns pass through untouched.
+ * Wraps `ConvertKit_API_V4` and converts every array response to a nested `stdClass`
+ * to mirror the PHP SDK's responses, ensuring TestsTrait tests can be used across
+ * both WordPress Libraries and the PHP SDK.
  *
  * @since   2.6.0
  */
