@@ -6577,7 +6577,7 @@ trait TestsTrait
     }
 
     /**
-     * Test that get_purchases() returns the expected data.
+     * Test that get_purchase() returns the expected data.
      *
      * @since   1.0.0
      *

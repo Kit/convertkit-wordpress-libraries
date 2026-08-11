@@ -1387,6 +1387,23 @@ class ConvertKit_API_V4 {
 	}
 
 	/**
+	 * PHP SDK method to get HTML for the given URL, which will be either a:
+	 * - Legacy Form
+	 * - Legacy Landing Page
+	 * - Landing Page
+	 *
+	 * This isn't specifically an API function, but for now it's best suited here.
+	 *
+	 * @param   string $url    URL of Form or Landing Page.
+	 * @return  WP_Error|string
+	 */
+	public function get_resource( $url ) {
+
+		return $this->get_html( $url, true );
+
+	}
+
+	/**
 	 * Sets the type attribute for script elements to 'text/javascript',
 	 * where Cloudflare prepends a random string to the type attribute.
 	 *
