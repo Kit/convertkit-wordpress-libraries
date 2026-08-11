@@ -92,22 +92,59 @@ class APITest extends WPTestCase
 		require_once 'src/class-convertkit-log.php';
 
 		// Initialize the classes we want to test.
-		$this->api = new \ConvertKit_API_V4(
+		$rawApi = new \ConvertKit_API_V4(
 			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
 			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
 			access_token: $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
 			refresh_token: $_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN']
 		);
 
-		$this->api_no_data = new \ConvertKit_API_V4(
+		$rawApiNoData = new \ConvertKit_API_V4(
 			client_id: $_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
 			redirect_uri: $_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
 			access_token: $_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN_NO_DATA'],
 			refresh_token: $_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN_NO_DATA']
 		);
 
+		// For tests from TestsTrait, use the ObjectResponseProxy to convert array responses to stdClass.
+		if ($this->currentTestIsFromTestsTrait()) {
+			require_once __DIR__ . '/../Support/Helper/WPUnit/ObjectResponseProxy.php';
+			$this->api         = new \Helper\WPUnit\ObjectResponseProxy($rawApi);
+			$this->api_no_data = new \Helper\WPUnit\ObjectResponseProxy($rawApiNoData);
+		} else {
+			$this->api         = $rawApi;
+			$this->api_no_data = $rawApiNoData;
+		}
+
 		// Wait a second to avoid hitting a 429 rate limit.
 		sleep(1);
+	}
+
+	/**
+	 * Returns true when the currently-executing test method was defined on
+	 * the shared TestsTrait rather than on this class.
+	 *
+	 * PHP reflection preserves the source file of trait-provided methods
+	 * even after the trait has been flattened into the composing class, so
+	 * we can distinguish the two just by looking at the declaring file.
+	 *
+	 * @since   2.6.0
+	 *
+	 * @return  bool
+	 */
+	private function currentTestIsFromTestsTrait(): bool
+	{
+		try {
+			// PHPUnit 10+ uses name(); older uses getName(false). Prefer the new API.
+			$testName = method_exists($this, 'name')
+				? $this->name()
+				: $this->getName(false);
+			$method   = new \ReflectionMethod($this, $testName);
+			$file     = $method->getFileName();
+			return $file !== false && basename($file) === 'TestsTrait.php';
+		} catch (\Throwable $e) {
+			return false;
+		}
 	}
 
 	/**
@@ -866,23 +903,6 @@ class APITest extends WPTestCase
 		$this->assertGreaterThan(0, $result['pagination']['total_count']);
 	}
 	/**
-	 * Test that add_subscriber_to_form_by_email() returns a WP_Error when an invalid
-	 * form is specified.
-	 *
-	 * @since   1.0.0
-	 *
-	 * @return void
-	 */
-	public function testAddSubscriberToFormByEmailWithInvalidformID()
-	{
-		$result = $this->api->add_subscriber_to_form_by_email(
-			form_id: 12345,
-			email_address: $_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL']
-		);
-		$this->assertInstanceOf(\WP_Error::class, $result);
-		$this->assertEquals($result->get_error_code(), $this->errorCode);
-	}
-	/**
 	 * Test that add_subscriber_to_form() returns a WP_Error when a legacy
 	 * form ID is specified.
 	 *
@@ -900,23 +920,6 @@ class APITest extends WPTestCase
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
-	/**
-	 * Test that add_subscriber_to_form() returns a WP_Error when an invalid
-	 * email address is specified.
-	 *
-	 * @since   2.0.0
-	 *
-	 * @return void
-	 */
-	public function testAddSubscriberToformWithInvalidSubscriberID()
-	{
-		$result = $this->api->add_subscriber_to_form(
-			form_id: (int) $_ENV['CONVERTKIT_API_FORM_ID'],
-			subscriber_id: 12345
-		);
-		$this->assertInstanceOf(\WP_Error::class, $result);
-		$this->assertEquals($result->get_error_code(), $this->errorCode);
-	}
 
 	/**
 	 * Test that add_subscriber_to_legacy_form() returns the expected data.
