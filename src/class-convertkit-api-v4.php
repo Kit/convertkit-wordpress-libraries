@@ -80,6 +80,20 @@ class ConvertKit_API_V4 {
 	protected $plugin_version;
 
 	/**
+	 * The HTTP status code of the last API response.
+	 *
+	 * Set by request() after every call. Read via get_last_response_code().
+	 * Provides parity with the PHP SDK's getResponseInterface()->getStatusCode(),
+	 * so tests that assert a specific status code (e.g. 204 for deletes) can be
+	 * copy-pasted between the SDK and WP Libs without change.
+	 *
+	 * @since   2.0.5
+	 *
+	 * @var     int
+	 */
+	protected $last_response_code = 0;
+
+	/**
 	 * ConvertKit API endpoints that use the /oauth/ namespace
 	 * i.e. https://api.kit.com/oauth/endpoint
 	 *
@@ -226,7 +240,24 @@ class ConvertKit_API_V4 {
 	}
 
 	/**
-	 * Base64URL the given code verifier, as PHP has no built in function for this.
+	 * Returns the HTTP status code of the last API response.
+	 *
+	 * Mirrors the PHP SDK's `getResponseInterface()->getStatusCode()` so tests
+	 * that assert a status code (for example 204 on delete) can be copy-pasted
+	 * between the SDK and WP Libs unchanged.
+	 *
+	 * @since   2.0.5
+	 *
+	 * @return  int    HTTP status code of the last API response (0 if none).
+	 */
+	public function get_last_response_code() {
+
+		return $this->last_response_code;
+
+	}
+
+	/**
+	 * Generates a PKCE Code Challenge for the given Code Verifier.
 	 *
 	 * @since   2.0.0
 	 *
@@ -1507,8 +1538,9 @@ class ConvertKit_API_V4 {
 		}
 
 		// Fetch HTTP response code and body.
-		$http_response_code = wp_remote_retrieve_response_code( $result );
-		$body               = wp_remote_retrieve_body( $result );
+		$http_response_code       = wp_remote_retrieve_response_code( $result );
+		$this->last_response_code = (int) $http_response_code;
+		$body                     = wp_remote_retrieve_body( $result );
 
 		// If the body is null i.e. a 204 No Content, don't attempt to JSON decode it.
 		$response = ( ! empty( $body ) ? json_decode( $body, true ) : null );
