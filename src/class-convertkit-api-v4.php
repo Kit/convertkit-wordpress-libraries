@@ -1531,8 +1531,8 @@ class ConvertKit_API_V4 {
 		}
 
 		// Fetch HTTP response code and body.
-		$http_response_code       = wp_remote_retrieve_response_code( $result );
-		$body                     = wp_remote_retrieve_body( $result );
+		$http_response_code = wp_remote_retrieve_response_code( $result );
+		$body               = wp_remote_retrieve_body( $result );
 
 		// Store the HTTP response code.
 		$this->last_response_code = (int) $http_response_code;
