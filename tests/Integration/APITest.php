@@ -1440,6 +1440,73 @@ class APITest extends WPTestCase
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
+
+	/**
+	 * Test that the `get_posts()` function returns expected data.
+	 *
+	 * @since   1.0.0
+	 */
+	public function testGetPosts()
+	{
+		$result = $this->api->get_posts();
+
+		// Test array was returned.
+		$this->assertNotInstanceOf(\WP_Error::class, $result);
+		$this->assertIsArray($result);
+
+		// Test expected response keys exist.
+		$this->assertArrayHasKey('total_posts', $result);
+		$this->assertArrayHasKey('page', $result);
+		$this->assertArrayHasKey('total_pages', $result);
+		$this->assertArrayHasKey('posts', $result);
+
+		// Test first post within posts array.
+		$this->assertArrayHasKey('id', reset($result['posts']));
+		$this->assertArrayHasKey('title', reset($result['posts']));
+		$this->assertArrayHasKey('url', reset($result['posts']));
+		$this->assertArrayHasKey('published_at', reset($result['posts']));
+		$this->assertArrayHasKey('is_paid', reset($result['posts']));
+	}
+
+	/**
+	 * Test that get_posts() returns the expected data
+	 * when the post content is included.
+	 *
+	 * @since   2.5.0
+	 *
+	 * @return void
+	 */
+	public function testGetPostsWithIncludeContent()
+	{
+		$this->markTestSkipped('Kit WordPress Libraries uses the wordpress/posts endpoint, which does not support the include_content parameter.');
+	}
+
+	/**
+	 * Test that get_posts() returns the expected data
+	 * when the total count is included.
+	 *
+	 * @since   2.5.0
+	 *
+	 * @return void
+	 */
+	public function testGetPostsWithTotalCount()
+	{
+		$this->markTestSkipped('Kit WordPress Libraries uses the wordpress/posts endpoint, which does not support the total_count parameter.');
+	}
+
+	/**
+	 * Test that get_posts() returns the expected data
+	 * when pagination parameters and per_page limits are specified.
+	 *
+	 * @since   2.5.0
+	 *
+	 * @return void
+	 */
+	public function testGetPostsPagination()
+	{
+		$this->markTestSkipped('Kit WordPress Libraries uses the wordpress/posts endpoint, which does not support the pagination parameter.');
+	}
+
 	/**
 	 * Test that the `get_posts()` function returns a blank array when no data
 	 * exists on the ConvertKit account.
