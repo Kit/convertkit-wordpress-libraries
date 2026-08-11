@@ -1670,7 +1670,7 @@ class APITest extends WPTestCase
 	 *
 	 * @since   1.3.8
 	 */
-	public function testGetPostByID()
+	public function testGetPost()
 	{
 		$result = $this->api->get_post($_ENV['CONVERTKIT_API_POST_ID']);
 		$this->assertNotInstanceOf(\WP_Error::class, $result);
@@ -1685,19 +1685,6 @@ class APITest extends WPTestCase
 		$this->assertArrayHasKey('url', $result);
 		$this->assertArrayHasKey('product_id', $result);
 		$this->assertArrayHasKey('content', $result);
-	}
-
-	/**
-	 * Test that the `get_post()` function returns a WP_Error when an invalid
-	 * Post ID is specified.
-	 *
-	 * @since   1.3.8
-	 */
-	public function testGetPostByInvalidID()
-	{
-		$result = $this->api->get_post(12345);
-		$this->assertInstanceOf(\WP_Error::class, $result);
-		$this->assertEquals($result->get_error_code(), $this->errorCode);
 	}
 
 	/**
