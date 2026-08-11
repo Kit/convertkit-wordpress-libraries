@@ -1339,6 +1339,19 @@ class ConvertKit_API_V4 {
 			);
 		}
 
+		// Treat any 4xx or 5xx status as an error.
+		if ( $http_response_code >= 400 ) {
+			return new WP_Error(
+				'convertkit_api_error',
+				sprintf(
+					/* translators: %1$s: URL, %2$d: HTTP status code */
+					__( 'ConvertKit: Request to %1$s returned HTTP %2$d.', 'convertkit' ),
+					$url,
+					(int) $http_response_code
+				)
+			);
+		}
+
 		// If the HTML is missing the <html> tag, it's likely to be a legacy form.
 		// Wrap it in <html>, <head> and <body> tags now, so we can inject the UTF-8 Content-Type meta tag.
 		if ( strpos( $body, '<html' ) === false ) {
