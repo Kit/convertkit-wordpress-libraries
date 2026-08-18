@@ -543,6 +543,16 @@ class ConvertKit_Resource_V4 {
 		// Build array of arguments depending on the resource type.
 		switch ( $resource_type ) {
 			case 'forms':
+				$args = array(
+					'active',
+					array(),
+					false,
+					'',
+					'',
+					$per_page,
+				);
+				break;
+
 			case 'landing_pages':
 				$args = array(
 					'active',
@@ -556,6 +566,17 @@ class ConvertKit_Resource_V4 {
 			case 'legacy_forms':
 			case 'legacy_landing_pages':
 				$args = array(
+					false,
+					'',
+					'',
+					$per_page,
+				);
+				break;
+
+			case 'tags':
+			case 'sequences':
+				$args = array(
+					array(),
 					false,
 					'',
 					'',
@@ -597,6 +618,16 @@ class ConvertKit_Resource_V4 {
 			// Build array of arguments depending on the resource type.
 			switch ( $resource_type ) {
 				case 'forms':
+					$args = array(
+						'active',
+						array(),
+						false,
+						$response['pagination']['end_cursor'],
+						'',
+						$per_page,
+					);
+					break;
+
 				case 'landing_pages':
 					$args = array(
 						'active',
@@ -610,6 +641,17 @@ class ConvertKit_Resource_V4 {
 				case 'legacy_forms':
 				case 'legacy_landing_pages':
 					$args = array(
+						false,
+						$response['pagination']['end_cursor'],
+						'',
+						$per_page,
+					);
+					break;
+
+				case 'tags':
+				case 'sequences':
+					$args = array(
+						array(),
 						false,
 						$response['pagination']['end_cursor'],
 						'',

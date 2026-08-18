@@ -5,6 +5,13 @@
     <!-- Inspect files in the /tests folder -->
     <file>tests</file>
 
+    <!-- Exclude TestsTrait.php: it is a verbatim copy of the PHP SDK's
+         TestsTrait.php (PSR-12 style, snake_case handled by API contract).
+         Running WordPress coding standards on it produces hundreds of
+         false positives and would force the file to diverge from its SDK
+         master copy, defeating the copy-paste workflow. -->
+    <exclude-pattern>tests/Integration/TestsTrait.php</exclude-pattern>
+
     <!-- Run in verbose mode and specify the precise rule that failed in output -->
     <arg value="sv"/>
     <arg name="colors"/>
@@ -36,6 +43,9 @@
 
         <!-- Permit [] instead of array() -->
         <exclude name="Universal.Arrays.DisallowShortArraySyntax.Found" />
+
+        <!-- Permit $fn instead of $function -->
+        <exclude name="Universal.NamingConventions.NoReservedKeywordParameterNames.fnFound" />
 
         <!-- We might use some datetime functions for tests -->
         <exclude name="WordPress.DateTime.RestrictedFunctions" />

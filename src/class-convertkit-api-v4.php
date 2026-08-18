@@ -21,7 +21,7 @@ class ConvertKit_API_V4 {
 	 *
 	 * @var string
 	 */
-	public const VERSION = '2.0.0';
+	public const VERSION = '2.6.0';
 
 	/**
 	 * Redirect URI.
@@ -78,6 +78,17 @@ class ConvertKit_API_V4 {
 	 * @var bool|string
 	 */
 	protected $plugin_version;
+
+	/**
+	 * The HTTP status code of the last API response.
+	 *
+	 * Set by request() after every call. Read via get_last_response_code().
+	 *
+	 * @since   2.6.0
+	 *
+	 * @var     int
+	 */
+	protected $last_response_code = 0;
 
 	/**
 	 * ConvertKit API endpoints that use the /oauth/ namespace
@@ -226,7 +237,20 @@ class ConvertKit_API_V4 {
 	}
 
 	/**
-	 * Base64URL the given code verifier, as PHP has no built in function for this.
+	 * Returns the HTTP status code of the last API response.
+	 *
+	 * @since   2.6.0
+	 *
+	 * @return  int    HTTP status code of the last API response (0 if none).
+	 */
+	public function get_last_response_code() {
+
+		return $this->last_response_code;
+
+	}
+
+	/**
+	 * Generates a PKCE Code Challenge for the given Code Verifier.
 	 *
 	 * @since   2.0.0
 	 *
@@ -1315,6 +1339,19 @@ class ConvertKit_API_V4 {
 			);
 		}
 
+		// Treat any 4xx or 5xx status as an error.
+		if ( $http_response_code >= 400 ) {
+			return new WP_Error(
+				'convertkit_api_error',
+				sprintf(
+					/* translators: %1$s: URL, %2$d: HTTP status code */
+					__( 'ConvertKit: Request to %1$s returned HTTP %2$d.', 'convertkit' ),
+					$url,
+					(int) $http_response_code
+				)
+			);
+		}
+
 		// If the HTML is missing the <html> tag, it's likely to be a legacy form.
 		// Wrap it in <html>, <head> and <body> tags now, so we can inject the UTF-8 Content-Type meta tag.
 		if ( strpos( $body, '<html' ) === false ) {
@@ -1359,6 +1396,23 @@ class ConvertKit_API_V4 {
 
 		// Return the HTML within the DOMDocument's <body> tag as a string.
 		return $this->get_body_html( $html );
+
+	}
+
+	/**
+	 * PHP SDK method to get HTML for the given URL, which will be either a:
+	 * - Legacy Form
+	 * - Legacy Landing Page
+	 * - Landing Page
+	 *
+	 * This isn't specifically an API function, but for now it's best suited here.
+	 *
+	 * @param   string $url    URL of Form or Landing Page.
+	 * @return  WP_Error|string
+	 */
+	public function get_resource( $url ) {
+
+		return $this->get_html( $url, true );
 
 	}
 
@@ -1509,6 +1563,9 @@ class ConvertKit_API_V4 {
 		// Fetch HTTP response code and body.
 		$http_response_code = wp_remote_retrieve_response_code( $result );
 		$body               = wp_remote_retrieve_body( $result );
+
+		// Store the HTTP response code.
+		$this->last_response_code = (int) $http_response_code;
 
 		// If the body is null i.e. a 204 No Content, don't attempt to JSON decode it.
 		$response = ( ! empty( $body ) ? json_decode( $body, true ) : null );
