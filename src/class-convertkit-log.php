@@ -20,7 +20,7 @@ class ConvertKit_Log {
 	 *
 	 * @var     string
 	 */
-	private $path;
+	private $path = '';
 
 	/**
 	 * The path and filename of the log file.
@@ -29,7 +29,7 @@ class ConvertKit_Log {
 	 *
 	 * @var     string
 	 */
-	private $log_file;
+	private $log_file = '';
 
 	/**
 	 * Constructor. Defines the log file location.
@@ -40,16 +40,20 @@ class ConvertKit_Log {
 	 */
 	public function __construct( $path ) {
 
+		// If historic log files exist in the Plugin's directory, delete them now.
+		$this->maybe_delete_historic_log_files( $path );
+
+		// Fetch the uploads directory.
+		$upload_dir = wp_upload_dir();
+
+		// Bail if the uploads directory is unavailable.
+		if ( ! empty( $upload_dir['error'] ) || empty( $upload_dir['basedir'] ) ) {
+			return;
+		}
+
 		// Define location of log file.
-		$this->path     = trailingslashit( $path . '/log' );
-		$this->log_file = $this->path . 'log.txt';
-
-		// Initialize WP_Filesystem.
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		WP_Filesystem();
-
-		// If a historic log file exists, delete it now.
-		$this->maybe_delete_historic_log_file( $path );
+		$this->path     = trailingslashit( $upload_dir['basedir'] ) . 'kit-logs/';
+		$this->log_file = $this->path . $this->get_log_file_name( $path );
 
 		// If the secure log directory does not exist, create it now.
 		$this->maybe_create_secure_log_directory();
@@ -57,21 +61,38 @@ class ConvertKit_Log {
 	}
 
 	/**
-	 * Deletes a log.txt file for the given 'old' log file path location,
-	 * which does not have .htaccess or index.html protection.
+	 * Deletes log files stored in the Plugin's directory by earlier versions of
+	 * this class.
+	 *
+	 * Deletes:
+	 * - `log.txt`, used prior to 1.4.2, which has no .htaccess or index.html protection,
+	 * - `log` directory and its contents, used from 1.4.2 to 2.6.0.
 	 *
 	 * @since   1.4.2
 	 *
-	 * @param   string $old_path   Path to possible historic log file.
+	 * @param   string $path   Path to the Plugin.
 	 */
-	private function maybe_delete_historic_log_file( $old_path ) {
+	private function maybe_delete_historic_log_files( $path ) {
 
-		// Bail if file doesn't exist.
-		if ( ! file_exists( trailingslashit( $old_path ) . 'log.txt' ) ) {
-			return;
+		// If a log.txt file exists in the Plugin's directory (i.e. from 1.4.2 or earlier), delete it.
+		$historic_file = trailingslashit( $path ) . 'log.txt';
+		if ( file_exists( $historic_file ) ) {
+			wp_delete_file( $historic_file );
 		}
 
-		wp_delete_file( trailingslashit( $old_path ) . 'log.txt' );
+		// If a log directory exists in the Plugin's directory (i.e. from 1.4.2 to 2.6.0), delete it and its contents.
+		$historic_path = trailingslashit( $path ) . 'log';
+		if ( is_dir( $historic_path ) ) {
+			// Delete the files this class created in the log directory.
+			foreach ( array( 'log.txt', '.htaccess', 'index.html' ) as $file ) {
+				if ( file_exists( trailingslashit( $historic_path ) . $file ) ) {
+					wp_delete_file( trailingslashit( $historic_path ) . $file );
+				}
+			}
+
+			// Delete the log directory.
+			rmdir( trailingslashit( $path ) . 'log' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+		}
 
 	}
 
@@ -79,19 +100,27 @@ class ConvertKit_Log {
 	 * Creates a directory to store the log file, with .htaccess and index.html
 	 * files to protect the log file, as WooCommerce does.
 	 *
+	 * Disables logging if the directory could not be created, or isn't writable.
+	 *
 	 * @since   1.4.2
 	 */
 	private function maybe_create_secure_log_directory() {
 
-		// Initialize WordPress file system.
-		global $wp_filesystem;
-
 		// Create directory.
 		wp_mkdir_p( $this->path );
 
+		// Disable logging if the directory doesn't exist or isn't writable.
+		if ( ! is_dir( $this->path ) || ! wp_is_writable( $this->path ) ) {
+			$this->path     = '';
+			$this->log_file = '';
+			return;
+		}
+
 		// Define files to protect the directory.
-		$wp_filesystem->put_contents( $this->path . '.htaccess', 'deny from all' );
-		$wp_filesystem->put_contents( $this->path . 'index.html', '' );
+		// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->path . '.htaccess', 'deny from all' );
+		file_put_contents( $this->path . 'index.html', '' );
+		// phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
 	}
 
@@ -117,6 +146,11 @@ class ConvertKit_Log {
 	 */
 	public function exists() {
 
+		// Bail if logging is disabled.
+		if ( ! $this->log_file ) {
+			return false;
+		}
+
 		return file_exists( $this->get_filename() );
 
 	}
@@ -130,14 +164,13 @@ class ConvertKit_Log {
 	 */
 	public function add( $entry ) {
 
-		// Initialize WordPress file system.
-		global $wp_filesystem;
+		// Bail if logging is disabled.
+		if ( ! $this->log_file ) {
+			return;
+		}
 
 		// Prefix the entry with a date and time.
 		$entry = '(' . gmdate( 'Y-m-d H:i:s' ) . ') ' . $entry . "\n";
-
-		// Get any existing log file contents.
-		$contents = $wp_filesystem->get_contents( $this->get_filename() );
 
 		// Mask email addresses that may be contained within the entry.
 		$entry = preg_replace_callback(
@@ -149,10 +182,8 @@ class ConvertKit_Log {
 		);
 
 		// Append entry.
-		$contents .= $entry;
-
-		// Write contents.
-		$wp_filesystem->put_contents( $this->get_filename(), $contents );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->get_filename(), $entry, FILE_APPEND );
 
 	}
 
@@ -166,16 +197,14 @@ class ConvertKit_Log {
 	 */
 	public function read( $number_of_lines = 500 ) {
 
-		// Initialize WordPress file system.
-		global $wp_filesystem;
-
 		// Bail if the log file does not exist.
 		if ( ! $this->exists() ) {
 			return '';
 		}
 
 		// Open log file.
-		$log = $wp_filesystem->get_contents_array( $this->get_filename() );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file
+		$log = file( $this->get_filename() );
 
 		// Bail if the log file is empty.
 		if ( ! is_array( $log ) || ! count( $log ) ) {
@@ -194,10 +223,13 @@ class ConvertKit_Log {
 	 */
 	public function clear() {
 
-		// Initialize WordPress file system.
-		global $wp_filesystem;
+		// Bail if logging is disabled.
+		if ( ! $this->log_file ) {
+			return;
+		}
 
-		$wp_filesystem->put_contents( $this->get_filename(), '' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->get_filename(), '' );
 
 	}
 
@@ -208,7 +240,28 @@ class ConvertKit_Log {
 	 */
 	public function delete() {
 
+		// Bail if logging is disabled.
+		if ( ! $this->log_file ) {
+			return;
+		}
+
 		wp_delete_file( $this->get_filename() );
+
+	}
+
+	/**
+	 * Returns the log file's name for the Plugin at the given path.
+	 *
+	 * @since   2.6.1
+	 *
+	 * @param   string $path   Path to the Plugin.
+	 * @return  string
+	 */
+	private function get_log_file_name( $path ) {
+
+		$slug = sanitize_key( basename( untrailingslashit( $path ) ) );
+
+		return $slug . '-' . wp_hash( 'convertkit-log-' . $slug ) . '.log';
 
 	}
 
