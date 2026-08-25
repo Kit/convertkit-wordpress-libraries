@@ -217,8 +217,10 @@ class APITest extends WPTestCase
 	}
 
 	/**
-	 * Test that a log directory and file are created in the expected location, with .htaccess
-	 * and index.html protection, and that the name and email addresses are masked.
+	 * Test that a log directory and file are created in the uploads directory, with .htaccess
+	 * and index.html protection, that log files stored in the Plugin's directory by earlier
+	 * versions of the ConvertKit_Log class are deleted, and that the name and email addresses
+	 * are masked.
 	 *
 	 * @since   1.4.2
 	 */
@@ -227,8 +229,14 @@ class APITest extends WPTestCase
 		// Define location for log file.
 		define( 'CONVERTKIT_PLUGIN_PATH', $_ENV['WORDPRESS_ROOT_DIR'] . '/wp-content/uploads' );
 
-		// Create a log.txt file.
+		// Create a log.txt file in the Plugin's directory, as versions prior to 1.4.2 did.
 		$this->tester->writeToFile(CONVERTKIT_PLUGIN_PATH . '/log.txt', 'historical log file');
+
+		// Create a log directory in the Plugin's directory, as versions 1.4.2 to 2.6.0 did.
+		wp_mkdir_p(CONVERTKIT_PLUGIN_PATH . '/log');
+		$this->tester->writeToFile(CONVERTKIT_PLUGIN_PATH . '/log/log.txt', 'historical log file');
+		$this->tester->writeToFile(CONVERTKIT_PLUGIN_PATH . '/log/.htaccess', 'deny from all');
+		$this->tester->writeToFile(CONVERTKIT_PLUGIN_PATH . '/log/index.html', '');
 
 		// Initialize API with logging enabled.
 		$api = new \ConvertKit_API_V4(
@@ -250,17 +258,25 @@ class APITest extends WPTestCase
 		);
 		$api->profile($_ENV['CONVERTKIT_API_SIGNED_SUBSCRIBER_ID']);
 
-		// Confirm the historical log.txt file has been deleted.
+		// Confirm the historical log.txt file (Libraries 1.4.2 and older) and
+		// log directory (Libraries 1.4.2 to 2.6.0) have been deleted from the
+		// Plugin's directory.
 		$this->assertFileDoesNotExist(CONVERTKIT_PLUGIN_PATH . '/log.txt');
+		$this->assertDirectoryDoesNotExist(CONVERTKIT_PLUGIN_PATH . '/log');
 
-		// Confirm the .htaccess and index.html files exist.
-		$this->assertDirectoryExists(CONVERTKIT_PLUGIN_PATH . '/log');
-		$this->assertFileExists(CONVERTKIT_PLUGIN_PATH . '/log/.htaccess');
-		$this->assertFileExists(CONVERTKIT_PLUGIN_PATH . '/log/index.html');
-		$this->assertFileExists(CONVERTKIT_PLUGIN_PATH . '/log/log.txt');
+		// Fetch the log file's location in the uploads directory.
+		$log     = new \ConvertKit_Log(CONVERTKIT_PLUGIN_PATH);
+		$logFile = $log->get_filename();
+		$logPath = dirname($logFile);
+
+		// Confirm the log directory, its .htaccess and index.html files, and the log file exist.
+		$this->assertDirectoryExists($logPath);
+		$this->assertFileExists($logPath . '/.htaccess');
+		$this->assertFileExists($logPath . '/index.html');
+		$this->assertFileExists($logFile);
 
 		// Confirm the contents of the log file have masked the email address, name and signed subscriber ID.
-		$this->tester->openFile(CONVERTKIT_PLUGIN_PATH . '/log/log.txt');
+		$this->tester->openFile($logFile);
 		$this->tester->seeInThisFile('API: POST subscribers: {"email_address":"o****@n********.c**","first_name":"******Name","state":"active","fields":{"last_name":"Last"}}');
 		$this->tester->seeInThisFile('API: GET profile/*****************************************');
 		$this->tester->dontSeeInThisFile($_ENV['CONVERTKIT_API_SUBSCRIBER_EMAIL']);
@@ -268,8 +284,8 @@ class APITest extends WPTestCase
 		$this->tester->dontSeeInThisFile($_ENV['CONVERTKIT_API_SIGNED_SUBSCRIBER_ID']);
 
 		// Cleanup test.
-		$this->tester->cleanDir(CONVERTKIT_PLUGIN_PATH . '/log');
-		$this->tester->deleteDir(CONVERTKIT_PLUGIN_PATH . '/log');
+		$this->tester->cleanDir($logPath);
+		$this->tester->deleteDir($logPath);
 	}
 
 	/**
