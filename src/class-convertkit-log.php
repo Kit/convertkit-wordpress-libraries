@@ -261,7 +261,7 @@ class ConvertKit_Log {
 
 		$slug = sanitize_key( basename( untrailingslashit( $path ) ) );
 
-		return $slug . '-' . wp_hash( 'convertkit-log-' . $slug ) . '.log';
+		return $slug . '-' . wp_hash( $slug ) . '.log';
 
 	}
 
