@@ -230,11 +230,11 @@ class APITest extends WPTestCase
 		define( 'CONVERTKIT_PLUGIN_PATH', $_ENV['WORDPRESS_ROOT_DIR'] . '/wp-content/uploads' );
 
 		// Create a log.txt file in the Plugin's directory, as versions prior to 1.4.2 did.
-		$this->tester->writeToFile(CONVERTKIT_PLUGIN_PATH . '/log.txt', 'historical log file');
+		$this->tester->writeToFile(CONVERTKIT_PLUGIN_PATH . '/log.txt', 'legacy log file');
 
 		// Create a log directory in the Plugin's directory, as versions 1.4.2 to 2.6.0 did.
 		wp_mkdir_p(CONVERTKIT_PLUGIN_PATH . '/log');
-		$this->tester->writeToFile(CONVERTKIT_PLUGIN_PATH . '/log/log.txt', 'historical log file');
+		$this->tester->writeToFile(CONVERTKIT_PLUGIN_PATH . '/log/log.txt', 'legacy log file');
 		$this->tester->writeToFile(CONVERTKIT_PLUGIN_PATH . '/log/.htaccess', 'deny from all');
 		$this->tester->writeToFile(CONVERTKIT_PLUGIN_PATH . '/log/index.html', '');
 
@@ -258,7 +258,7 @@ class APITest extends WPTestCase
 		);
 		$api->profile($_ENV['CONVERTKIT_API_SIGNED_SUBSCRIBER_ID']);
 
-		// Confirm the historical log.txt file (Libraries 1.4.2 and older) and
+		// Confirm the legacy log.txt file (Libraries 1.4.2 and older) and
 		// log directory (Libraries 1.4.2 to 2.6.0) have been deleted from the
 		// Plugin's directory.
 		$this->assertFileDoesNotExist(CONVERTKIT_PLUGIN_PATH . '/log.txt');

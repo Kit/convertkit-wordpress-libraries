@@ -40,8 +40,8 @@ class ConvertKit_Log {
 	 */
 	public function __construct( $path ) {
 
-		// If historic log files exist in the Plugin's directory, delete them now.
-		$this->maybe_delete_historic_log_files( $path );
+		// If legacy log files exist in the Plugin's directory, delete them now.
+		$this->maybe_delete_legacy_log_files( $path );
 
 		// Fetch the uploads directory.
 		$upload_dir = wp_upload_dir();
@@ -72,21 +72,21 @@ class ConvertKit_Log {
 	 *
 	 * @param   string $path   Path to the Plugin.
 	 */
-	private function maybe_delete_historic_log_files( $path ) {
+	private function maybe_delete_legacy_log_files( $path ) {
 
 		// If a log.txt file exists in the Plugin's directory (i.e. from 1.4.2 or earlier), delete it.
-		$historic_file = trailingslashit( $path ) . 'log.txt';
-		if ( file_exists( $historic_file ) ) {
-			wp_delete_file( $historic_file );
+		$legacy_file = trailingslashit( $path ) . 'log.txt';
+		if ( file_exists( $legacy_file ) ) {
+			wp_delete_file( $legacy_file );
 		}
 
 		// If a log directory exists in the Plugin's directory (i.e. from 1.4.2 to 2.6.0), delete it and its contents.
-		$historic_path = trailingslashit( $path ) . 'log';
-		if ( is_dir( $historic_path ) ) {
+		$legacy_path = trailingslashit( $path ) . 'log';
+		if ( is_dir( $legacy_path ) ) {
 			// Delete the files this class created in the log directory.
 			foreach ( array( 'log.txt', '.htaccess', 'index.html' ) as $file ) {
-				if ( file_exists( trailingslashit( $historic_path ) . $file ) ) {
-					wp_delete_file( trailingslashit( $historic_path ) . $file );
+				if ( file_exists( trailingslashit( $legacy_path ) . $file ) ) {
+					wp_delete_file( trailingslashit( $legacy_path ) . $file );
 				}
 			}
 

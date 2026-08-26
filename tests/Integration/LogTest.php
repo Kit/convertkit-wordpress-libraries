@@ -171,17 +171,17 @@ class LogTest extends WPTestCase
 	 *
 	 * @since   2.6.1
 	 */
-	public function testHistoricLogFileIsDeleted()
+	public function testLegacyLogFileIsDeleted()
 	{
 		// Create a log.txt file, as versions prior to 1.4.2 did.
-		$historicLogFile = trailingslashit($this->plugin_path) . 'log.txt';
-		file_put_contents($historicLogFile, 'Log entry'); // phpcs:ignore WordPress.WP.AlternativeFunctions
-		$this->assertFileExists($historicLogFile);
+		$legacyLogFile = trailingslashit($this->plugin_path) . 'log.txt';
+		file_put_contents($legacyLogFile, 'Log entry'); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		$this->assertFileExists($legacyLogFile);
 
 		$this->log = new \ConvertKit_Log($this->plugin_path);
 
-		// Confirm the historic log file was deleted.
-		$this->assertFileDoesNotExist($historicLogFile);
+		// Confirm the legacy log file was deleted.
+		$this->assertFileDoesNotExist($legacyLogFile);
 	}
 
 	/**
@@ -190,20 +190,20 @@ class LogTest extends WPTestCase
 	 *
 	 * @since   2.6.1
 	 */
-	public function testHistoricLogDirectoryIsDeleted()
+	public function testLegacyLogDirectoryIsDeleted()
 	{
 		// Create a log directory, as versions 1.4.2 to 2.6.0 did.
-		$historicLogPath = trailingslashit($this->plugin_path) . 'log';
-		wp_mkdir_p($historicLogPath);
+		$legacyLogPath = trailingslashit($this->plugin_path) . 'log';
+		wp_mkdir_p($legacyLogPath);
 		foreach ([ 'log.txt', '.htaccess', 'index.html' ] as $file) {
-			file_put_contents(trailingslashit($historicLogPath) . $file, ''); // phpcs:ignore WordPress.WP.AlternativeFunctions
+			file_put_contents(trailingslashit($legacyLogPath) . $file, ''); // phpcs:ignore WordPress.WP.AlternativeFunctions
 		}
-		$this->assertDirectoryExists($historicLogPath);
+		$this->assertDirectoryExists($legacyLogPath);
 
 		$this->log = new \ConvertKit_Log($this->plugin_path);
 
-		// Confirm the historic log directory and its contents were deleted.
-		$this->assertDirectoryDoesNotExist($historicLogPath);
+		// Confirm the legacy log directory and its contents were deleted.
+		$this->assertDirectoryDoesNotExist($legacyLogPath);
 	}
 
 	/**
@@ -230,7 +230,7 @@ class LogTest extends WPTestCase
 	}
 
 	/**
-	 * Test that the log is written, and historic log files deleted, when WordPress'
+	 * Test that the log is written, and legacy log files deleted, when WordPress'
 	 * WP_Filesystem is unusable.
 	 *
 	 * On hosts where WordPress selects the FTP transport and no FTP credentials are
@@ -263,17 +263,17 @@ class LogTest extends WPTestCase
 			}
 		};
 
-		// Create a historic log directory, to confirm it is deleted without calling
+		// Create a legacy log directory, to confirm it is deleted without calling
 		// WP_Filesystem.
-		$historicLogPath = trailingslashit($this->plugin_path) . 'log';
-		wp_mkdir_p($historicLogPath);
-		file_put_contents(trailingslashit($historicLogPath) . 'log.txt', ''); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		$legacyLogPath = trailingslashit($this->plugin_path) . 'log';
+		wp_mkdir_p($legacyLogPath);
+		file_put_contents(trailingslashit($legacyLogPath) . 'log.txt', ''); // phpcs:ignore WordPress.WP.AlternativeFunctions
 
 		$this->log = new \ConvertKit_Log($this->plugin_path);
 		$this->log->add('Log entry');
 
-		// Confirm the historic log directory was deleted.
-		$this->assertDirectoryDoesNotExist($historicLogPath);
+		// Confirm the legacy log directory was deleted.
+		$this->assertDirectoryDoesNotExist($legacyLogPath);
 
 		// Confirm the log was written and can be read.
 		$this->assertTrue($this->log->exists());
