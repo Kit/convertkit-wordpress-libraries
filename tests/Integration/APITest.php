@@ -184,16 +184,26 @@ class APITest extends WPTestCase
 	 * (never as a thrown exception). We accept both return and throw so
 	 * that any input-validation code that throws still counts.
 	 *
-	 * @since   2.0.5
+	 * Where the SDK validates arguments before performing an API request, specify
+	 * $expected, to assert that validation produced the error and not the API.
 	 *
-	 * @param   callable $fn Callable that should fail.
+	 * @since   2.0.5
+	 * @since   2.7.0 Added the $expected parameter.
+	 *
+	 * @param   callable    $fn       Callable that should fail.
+	 * @param   string|null $expected Expected exception class name.
 	 * @return  void
 	 */
-	protected function assertApiError(callable $fn): void
+	protected function assertApiError(callable $fn, string|null $expected = null): void
 	{
 		try {
 			$result = $fn();
 		} catch (\Throwable $e) {
+			if ( ! is_null($expected)) {
+				$this->assertInstanceOf($expected, $e);
+				return;
+			}
+
 			$this->assertTrue(true, 'Callable threw an exception as expected.');
 			return;
 		}
