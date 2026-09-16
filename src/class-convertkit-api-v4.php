@@ -1530,6 +1530,19 @@ class ConvertKit_API_V4 {
 				);
 				break;
 
+			case 'patch':
+				$result = wp_remote_request(
+					$this->get_api_url( $endpoint ),
+					array(
+						'method'     => 'PATCH',
+						'headers'    => $this->get_request_headers(),
+						'body'       => wp_json_encode( $params ),
+						'timeout'    => $this->get_timeout(),
+						'user-agent' => $this->get_user_agent(),
+					)
+				);
+				break;
+
 			case 'delete':
 				$result = wp_remote_request(
 					$this->get_api_url( $endpoint ),
@@ -1854,17 +1867,19 @@ class ConvertKit_API_V4 {
 
 		// For some specific API endpoints created primarily for the WordPress Plugin, the API base is
 		// https://api.kit.com/wordpress/$endpoint.
-		// We perform a string search instead of in_array(), because the $endpoint might be e.g.
-		// profile/{subscriber_id} or subscriber_authentication/send_code.
+		// We match on the start of the $endpoint instead of in_array(), because the $endpoint might be
+		// e.g. profile/{subscriber_id} or subscriber_authentication/send_code. Matching anywhere in the
+		// $endpoint would wrongly match v4 endpoints that contain one of these names in a later segment,
+		// such as webhook_endpoints/{id}/revoke_previous_secret.
 		foreach ( $this->api_endpoints_wordpress as $wordpress_endpoint ) {
-			if ( strpos( $endpoint, $wordpress_endpoint ) !== false ) {
+			if ( strpos( $endpoint, $wordpress_endpoint ) === 0 ) {
 				return path_join( $this->api_url_base . 'wordpress', $endpoint ); // phpcs:ignore WordPress.WP.CapitalPDangit
 			}
 		}
 
 		// For oAuth API endpoints, the API base is https://api.kit.com/oauth/$endpoint.
 		foreach ( $this->api_endpoints_oauth as $oauth_endpoint ) {
-			if ( strpos( $endpoint, $oauth_endpoint ) !== false ) {
+			if ( strpos( $endpoint, $oauth_endpoint ) === 0 ) {
 				return path_join( $this->api_url_base . 'oauth', $endpoint );
 			}
 		}
