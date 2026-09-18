@@ -392,11 +392,8 @@ class ConvertKit_Resource_V4 {
 			case 'tags':
 			case 'sequences':
 			case 'custom_fields':
-				$results = $this->get_all_resources( $this->type );
-				break;
-
 			case 'posts':
-				$results = $this->api->get_all_posts();
+				$results = $this->get_all_resources( $this->type );
 				break;
 
 			case 'products':
@@ -573,6 +570,16 @@ class ConvertKit_Resource_V4 {
 				);
 				break;
 
+			case 'posts':
+				$args = array(
+					false, // Don't include post content.
+					false,
+					'',
+					'',
+					$per_page,
+				);
+				break;
+
 			case 'tags':
 			case 'sequences':
 				$args = array(
@@ -641,6 +648,16 @@ class ConvertKit_Resource_V4 {
 				case 'legacy_forms':
 				case 'legacy_landing_pages':
 					$args = array(
+						false,
+						$response['pagination']['end_cursor'],
+						'',
+						$per_page,
+					);
+					break;
+
+				case 'posts':
+					$args = array(
+						false, // Don't include post content.
 						false,
 						$response['pagination']['end_cursor'],
 						'',
@@ -719,11 +736,27 @@ class ConvertKit_Resource_V4 {
 		}
 
 		foreach ( $response[ $type ] as $item ) {
-			// Exclude Forms that have a null `format` value, as they are Creator Profile / Creator Network
-			// forms that we don't need in WordPress.
-			// Legacy forms don't have a `format` key, and we always want to include them in the resultset.
-			if ( $resource_type === 'forms' && array_key_exists( 'format', $item ) && is_null( $item['format'] ) ) {
-				continue;
+			switch ( $resource_type ) {
+				case 'forms':
+					// Exclude Forms that have a null `format` value, as they are Creator Profile / Creator Network
+					// forms that we don't need in WordPress.
+					// Legacy forms don't have a `format` key, and we always want to include them in the resultset.
+					if ( array_key_exists( 'format', $item ) && is_null( $item['format'] ) ) {
+						continue 2;
+					}
+					break;
+
+				case 'posts':
+					// Exclude Posts that have a null `published_at` value or aren't published, as they
+					// are draft or scheduled Posts that aren't yet publicly viewable and therefore
+					// shouldn't be displayed or imported in WordPress.
+					if ( ! array_key_exists( 'published_at', $item ) || is_null( $item['published_at'] ) ) {
+						continue 2;
+					}
+					if ( ! array_key_exists( 'status', $item ) || $item['status'] !== 'published' ) {
+						continue 2;
+					}
+					break;
 			}
 
 			$items[ $item['id'] ] = $item;

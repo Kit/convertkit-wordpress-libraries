@@ -5350,6 +5350,16 @@ trait TestsTrait
         $result = $this->api->get_post($_ENV['CONVERTKIT_API_POST_ID']);
         $result = get_object_vars($result->post);
         $this->assertEquals($result['id'], $_ENV['CONVERTKIT_API_POST_ID']);
+		$this->assertArrayHasKey('id', $result);
+		$this->assertArrayHasKey('title', $result);
+		$this->assertArrayHasKey('description', $result);
+		$this->assertArrayHasKey('published_at', $result);
+		$this->assertArrayHasKey('is_paid', $result);
+		$this->assertArrayHasKey('thumbnail_alt', $result);
+		$this->assertArrayHasKey('thumbnail_url', $result);
+		$this->assertArrayHasKey('url', $result);
+		$this->assertArrayHasKey('product_id', $result);
+		$this->assertArrayHasKey('content', $result);
     }
 
     /**
