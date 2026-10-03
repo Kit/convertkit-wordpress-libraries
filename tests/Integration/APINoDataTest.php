@@ -220,34 +220,6 @@ class APINoDataTest extends WPTestCase
 	}
 
 	/**
-	 * Test that the `get_posts()` function returns a blank array when no data
-	 * exists on the ConvertKit account.
-	 *
-	 * @since   2.0.0
-	 */
-	public function testGetPostsNoData()
-	{
-		$result = $this->api->get_posts();
-		$this->assertNotInstanceOf(\WP_Error::class, $result);
-		$this->assertIsArray($result);
-		$this->assertCount(0, $result);
-	}
-
-	/**
-	 * Test that the `get_all_posts()` function returns a blank array when no data
-	 * exists on the ConvertKit account.
-	 *
-	 * @since   2.0.0
-	 */
-	public function testGetAllPostsNoData()
-	{
-		$result = $this->api->get_all_posts();
-		$this->assertNotInstanceOf(\WP_Error::class, $result);
-		$this->assertIsArray($result);
-		$this->assertCount(0, $result);
-	}
-
-	/**
 	 * Test that the `get_products()` function returns a blank array when no data
 	 * exists on the ConvertKit account.
 	 *

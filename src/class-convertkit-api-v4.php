@@ -112,7 +112,6 @@ class ConvertKit_API_V4 {
 	 * @var     array
 	 */
 	protected $api_endpoints_wordpress = array(
-		'posts',
 		'products',
 		'profile/',
 		'recommendations_script',
@@ -172,15 +171,6 @@ class ConvertKit_API_V4 {
 		// otherwise localization won't work.
 		// phpcs:disable
 		$this->error_messages = array(
-			// get_all_posts().
-			'get_all_posts_posts_per_request_bound_too_low' => __( 'get_all_posts(): the posts_per_request parameter must be equal to or greater than 1.', 'convertkit' ),
-			'get_all_posts_posts_per_request_bound_too_high' => __( 'get_all_posts(): the posts_per_request parameter must be equal to or less than 50.', 'convertkit' ),
-
-			// get_posts().
-			'get_posts_page_parameter_bound_too_low'      => __( 'get_posts(): the page parameter must be equal to or greater than 1.', 'convertkit' ),
-			'get_posts_per_page_parameter_bound_too_low'  => __( 'get_posts(): the per_page parameter must be equal to or greater than 1.', 'convertkit' ),
-			'get_posts_per_page_parameter_bound_too_high' => __( 'get_posts(): the per_page parameter must be equal to or less than 50.', 'convertkit' ),
-
 			// subscriber_authentication_send_code().
 			'subscriber_authentication_send_code_email_empty'			=> __( 'subscriber_authentication_send_code(): the email parameter is empty.', 'convertkit' ),
 			'subscriber_authentication_send_code_redirect_url_empty'	=> __( 'subscriber_authentication_send_code(): the redirect_url parameter is empty.', 'convertkit' ),
@@ -760,67 +750,6 @@ class ConvertKit_API_V4 {
 	}
 
 	/**
-	 * Gets all posts from the API.
-	 *
-	 * @since   1.0.0
-	 *
-	 * @param   int $posts_per_request   Number of Posts to fetch in each request.
-	 * @return  WP_Error|array
-	 */
-	public function get_all_posts( $posts_per_request = 50 ) {
-
-		// Sanitize some parameters.
-		$posts_per_request = absint( $posts_per_request );
-
-		// Sanity check that parameters aren't outside of the bounds as defined by the API.
-		if ( $posts_per_request < 1 ) {
-			return new WP_Error( 'convertkit_api_error', $this->get_error_message( 'get_all_posts_posts_per_request_bound_too_low' ) );
-		}
-		if ( $posts_per_request > 50 ) {
-			return new WP_Error( 'convertkit_api_error', $this->get_error_message( 'get_all_posts_posts_per_request_bound_too_high' ) );
-		}
-
-		// Define an array to store the posts in.
-		$posts = array();
-
-		// Mock the response to start the while loop.
-		$response = array(
-			'page'        => 0, // Start on page zero, as the below loop will add 1 to this.
-			'total_pages' => 1, // We always know there will be one page of posts.
-		);
-
-		// Iterate through each page of posts.
-		while ( absint( $response['total_pages'] ) >= absint( $response['page'] ) + 1 ) {
-			// Fetch posts.
-			$response = $this->get_posts( absint( $response['page'] ) + 1, $posts_per_request );
-
-			// Bail if an error occured.
-			if ( is_wp_error( $response ) ) {
-				return $response;
-			}
-
-			// Exit loop if no posts exist.
-			if ( ! count( $response ) ) {
-				break;
-			}
-
-			// Append posts to array.
-			foreach ( $response['posts'] as $post ) {
-				$posts[ $post['id'] ] = $post;
-			}
-		}
-
-		// If no posts exist, log an error.
-		if ( ! count( $posts ) ) {
-			$this->log( 'API: get_posts(): Error: No broadcasts exist in ConvertKit.' );
-		}
-
-		// Return posts.
-		return $posts;
-
-	}
-
-	/**
 	 * Get legacy forms.
 	 *
 	 * @param boolean $include_total_count To include the total count of records in the response, use true.
@@ -882,102 +811,6 @@ class ConvertKit_API_V4 {
 				$per_page
 			)
 		);
-	}
-
-	/**
-	 * Gets posts from the API.
-	 *
-	 * @since   1.0.0
-	 *
-	 * @param   int $page       Page number.
-	 * @param   int $per_page   Number of Posts to return.
-	 * @return  WP_Error|array
-	 */
-	public function get_posts( $page = 1, $per_page = 10 ) {
-
-		// Sanitize some parameters.
-		$page     = absint( $page );
-		$per_page = absint( $per_page );
-
-		// Sanity check that parameters aren't outside of the bounds as defined by the API.
-		if ( $page < 1 ) {
-			return new WP_Error( 'convertkit_api_error', $this->get_error_message( 'get_posts_page_parameter_bound_too_low' ) );
-		}
-		if ( $per_page < 1 ) {
-			return new WP_Error( 'convertkit_api_error', $this->get_error_message( 'get_posts_per_page_parameter_bound_too_low' ) );
-		}
-		if ( $per_page > 50 ) {
-			return new WP_Error( 'convertkit_api_error', $this->get_error_message( 'get_posts_per_page_parameter_bound_too_high' ) );
-		}
-
-		$posts = array();
-
-		// Send request.
-		$response = $this->get(
-			'posts',
-			array(
-				'page'     => $page,
-				'per_page' => $per_page,
-			)
-		);
-
-		// If an error occured, return WP_Error.
-		if ( is_wp_error( $response ) ) {
-			$this->log( 'API: get_posts(): Error: ' . $response->get_error_message() );
-			return $response;
-		}
-
-		// If the response isn't an array as we expect, log that no posts exist and return a blank array.
-		if ( ! is_array( $response['posts'] ) ) {
-			$this->log( 'API: get_posts(): Error: No broadcasts exist in ConvertKit.' );
-			return new WP_Error( 'convertkit_api_error', $this->get_error_message( 'response_type_unexpected' ) );
-		}
-
-		// If no posts exist, log that no posts exist and return a blank array.
-		if ( ! count( $response['posts'] ) ) {
-			$this->log( 'API: get_posts(): Error: No broadcasts exist in ConvertKit.' );
-			return $posts;
-		}
-
-		return $response;
-
-	}
-
-	/**
-	 * Gets a specific post.
-	 *
-	 * @since   1.3.8
-	 *
-	 * @param   int $post_id   Post ID.
-	 * @return  WP_Error|array
-	 */
-	public function get_post( $post_id ) {
-
-		// Send request.
-		$response = $this->get(
-			sprintf( 'posts/%s', $post_id )
-		);
-
-		// If an error occured, return WP_Error.
-		if ( is_wp_error( $response ) ) {
-			$this->log( 'API: get_posts(): Error: ' . $response->get_error_message() );
-			return $response;
-		}
-
-		// If the response contains a message, an error occured.
-		// Log and return it now.
-		if ( array_key_exists( 'message', $response ) ) {
-			$error = new WP_Error(
-				'convertkit_api_error',
-				$response['message']
-			);
-
-			$this->log( 'API: get_post(): Error: ' . $error->get_error_message() );
-			return $error;
-		}
-
-		return $response['post'];
-
 	}
 
 	/**
