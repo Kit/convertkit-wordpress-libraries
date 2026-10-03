@@ -198,19 +198,39 @@ class APITest extends WPTestCase
 	 * (never as a thrown exception). We accept both return and throw so
 	 * that any input-validation code that throws still counts.
 	 *
-	 * @since   2.0.5
+	 * Where the code validates arguments before performing an API request, specify
+	 * $expected, to assert that validation produced the error and not the API. A
+	 * returned WP_Error does not satisfy $expected, so a test that expects an
+	 * exception fails if the validation is removed.
 	 *
-	 * @param   callable $fn Callable that should fail.
+	 * @since   2.0.5
+	 * @since   2.7.0 Added the $expected parameter.
+	 *
+	 * @param   callable    $fn       Callable that should fail.
+	 * @param   string|null $expected Expected exception class name.
 	 * @return  void
 	 */
-	protected function assertApiError(callable $fn): void
+	protected function assertApiError(callable $fn, string|null $expected = null): void
 	{
 		try {
 			$result = $fn();
 		} catch (\Throwable $e) {
+			if ( ! is_null($expected)) {
+				$this->assertInstanceOf($expected, $e);
+				return;
+			}
+
 			$this->assertTrue(true, 'Callable threw an exception as expected.');
 			return;
 		}
+
+		// An exception was expected, so a returned WP_Error isn't the error we asked to assert.
+		if ( ! is_null($expected)) {
+			$this->fail(
+				sprintf('Expected %s to be thrown, but the callable returned instead.', $expected)
+			);
+		}
+
 		$this->assertInstanceOf(\WP_Error::class, $result);
 	}
 
@@ -1469,6 +1489,26 @@ class APITest extends WPTestCase
 		);
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), $this->errorCode);
+	}
+
+	/**
+	 * Test that get_resource() returns a WP_Error when an invalid URL is specified.
+	 *
+	 * Overrides the version in TestsTrait: the PHP SDK validates the URL and throws an
+	 * InvalidArgumentException, whereas WordPress Libraries passes the URL to
+	 * wp_remote_get(), which returns a WP_Error.
+	 *
+	 * @since   2.7.0
+	 *
+	 * @return  void
+	 */
+	public function testGetResourceInvalidURL()
+	{
+		$this->assertApiError(
+			function () {
+				return $this->api->get_resource('not-a-url');
+			}
+		);
 	}
 
 	/**
