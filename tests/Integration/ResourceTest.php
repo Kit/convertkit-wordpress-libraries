@@ -550,6 +550,50 @@ class ResourceTest extends WPTestCase
 	}
 
 	/**
+	 * Tests that the refresh() function for Segments returns resources in an array, and that they are
+	 * stored in the WordPress options table.
+	 *
+	 * @since   2.8.1
+	 */
+	public function testRefreshSegments()
+	{
+		// Assign resource type and API.
+		$this->resource->settings_name = 'convertkit_resource_segments';
+		$this->resource->type          = 'segments';
+		$this->resource->api           = new \ConvertKit_API_V4(
+			$_ENV['CONVERTKIT_OAUTH_CLIENT_ID'],
+			$_ENV['CONVERTKIT_OAUTH_REDIRECT_URI'],
+			$_ENV['CONVERTKIT_OAUTH_ACCESS_TOKEN'],
+			$_ENV['CONVERTKIT_OAUTH_REFRESH_TOKEN']
+		);
+
+		// Call resource class' refresh() function.
+		$result = $this->resource->refresh();
+
+		// Assert result is an array.
+		$this->assertIsArray($result);
+
+		// Assert array keys are preserved.
+		$this->assertArrayHasKey($_ENV['CONVERTKIT_API_SEGMENT_ID'], $result);
+
+		// Confirm resources stored in WordPress options.
+		$resources = get_option($this->resource->settings_name);
+
+		// Assert result is an array.
+		$this->assertIsArray($resources);
+
+		// Assert array keys are preserved.
+		$this->assertArrayHasKey($_ENV['CONVERTKIT_API_SEGMENT_ID'], $resources);
+
+		// Delete resources.
+		$this->resource->delete();
+
+		// Confirm resources no longer stored in WordPress options.
+		$this->assertFalse(get_option($this->resource->settings_name));
+		$this->assertFalse(get_option($this->resource->settings_name . '_last_queried'));
+	}
+
+	/**
 	 * Tests that the refresh() function for Products returns resources in an array, and that they are
 	 * in alphabetical ascending order by default.
 	 *
