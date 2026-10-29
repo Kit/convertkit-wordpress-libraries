@@ -391,6 +391,7 @@ class ConvertKit_Resource_V4 {
 
 			case 'tags':
 			case 'sequences':
+			case 'segments':
 			case 'custom_fields':
 			case 'posts':
 				$results = $this->get_all_resources( $this->type );
