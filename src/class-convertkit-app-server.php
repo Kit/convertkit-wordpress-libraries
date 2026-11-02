@@ -33,17 +33,28 @@ class ConvertKit_App_Server {
 	private $url = '';
 
 	/**
+	 * Holds the Plugin, WordPress and dependency versions sent with each request.
+	 *
+	 * @since   2.9.0
+	 *
+	 * @var     array
+	 */
+	private $versions = array();
+
+	/**
 	 * Constructor.
 	 *
 	 * @since   2.9.0
 	 *
 	 * @param   string $client_id  Plugin's Kit OAuth client ID.
 	 * @param   string $url        App Server URL.
+	 * @param   array  $versions   Plugin, WordPress and dependency versions, keyed by name.
 	 */
-	public function __construct( $client_id, $url ) {
+	public function __construct( $client_id, $url, $versions = array() ) {
 
 		$this->client_id = $client_id;
 		$this->url       = untrailingslashit( $url );
+		$this->versions  = $versions;
 
 	}
 
@@ -138,6 +149,20 @@ class ConvertKit_App_Server {
 	}
 
 	/**
+	 * Sends this site's daily heartbeat to the App Server, with its versions.
+	 *
+	 * @since   2.9.0
+	 *
+	 * @param   string $site_secret    Site secret returned by register_site().
+	 * @return  WP_Error|array
+	 */
+	public function heartbeat( $site_secret ) {
+
+		return $this->request( 'POST', '/api/sites/heartbeat', array(), 200, $site_secret );
+
+	}
+
+	/**
 	 * Sends an automation event to the App Server, which Kit polls for the app's event nodes.
 	 *
 	 * @since   2.9.0
@@ -198,6 +223,7 @@ class ConvertKit_App_Server {
 							'site_url'  => get_site_url(),
 							'client_id' => $this->client_id,
 						),
+						! empty( $this->versions ) ? array( 'versions' => $this->versions ) : array(),
 						$body
 					)
 				),
@@ -214,6 +240,9 @@ class ConvertKit_App_Server {
 				sprintf(
 					'Kit App Server returned HTTP %s',
 					wp_remote_retrieve_response_code( $response )
+				),
+				array(
+					'status' => wp_remote_retrieve_response_code( $response ),
 				)
 			);
 		}

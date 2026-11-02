@@ -207,6 +207,47 @@ class AppServerTest extends WPTestCase
 	}
 
 	/**
+	 * Test that versions passed to the constructor are sent with each request.
+	 *
+	 * @since   2.9.0
+	 */
+	public function testSendsVersions()
+	{
+		$app_server = new \ConvertKit_App_Server(
+			'client-id',
+			'https://app-server.test/',
+			array(
+				'plugin'    => '2.3.0',
+				'wordpress' => '6.9',
+			)
+		);
+
+		$this->response['code'] = 201;
+		$app_server->send_automation_event('secret', 'abandoned_checkout', 123);
+		$this->assertEquals(
+			array(
+				'plugin'    => '2.3.0',
+				'wordpress' => '6.9',
+			),
+			$this->request['body']['versions']
+		);
+
+		$this->response['code'] = 200;
+		$app_server->register_site('access-token');
+		$this->assertEquals(
+			array(
+				'plugin'    => '2.3.0',
+				'wordpress' => '6.9',
+			),
+			$this->request['body']['versions']
+		);
+
+		// Not sent when none are given.
+		$this->app_server->register_site('access-token');
+		$this->assertArrayNotHasKey('versions', $this->request['body']);
+	}
+
+	/**
 	 * Test that send_automation_event() sends a null context when none is given.
 	 *
 	 * @since   2.9.0
@@ -234,5 +275,26 @@ class AppServerTest extends WPTestCase
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals('convertkit_app_server_error', $result->get_error_code());
 		$this->assertEquals('Kit App Server returned HTTP 401', $result->get_error_message());
+		$this->assertEquals(array( 'status' => 401 ), $result->get_error_data());
+	}
+
+	/**
+	 * Test that heartbeat() authenticates with the site secret and sends the versions.
+	 *
+	 * @since   2.9.0
+	 */
+	public function testHeartbeat()
+	{
+		$app_server = new \ConvertKit_App_Server('client-id', 'https://app-server.test/', array( 'plugin' => '2.3.0' ));
+
+		$this->response['body'] = array( 'success' => true );
+
+		$result = $app_server->heartbeat('secret');
+
+		$this->assertEquals(array( 'success' => true ), $result);
+		$this->assertEquals('https://app-server.test/api/sites/heartbeat', $this->request['url']);
+		$this->assertEquals('POST', $this->request['args']['method']);
+		$this->assertEquals('Bearer secret', $this->request['args']['headers']['Authorization']);
+		$this->assertEquals(array( 'plugin' => '2.3.0' ), $this->request['body']['versions']);
 	}
 }
