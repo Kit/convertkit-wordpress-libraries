@@ -314,8 +314,7 @@ class ResourceTest extends WPTestCase
 		$this->assertArrayHasKey($_ENV['CONVERTKIT_API_FORM_ID'], $result);
 
 		// Assert order of data is in ascending alphabetical order.
-		$this->assertEquals('AAA Test', reset($result)[ $this->resource->order_by ]);
-		$this->assertEquals('WooCommerce Product Form', end($result)[ $this->resource->order_by ]);
+		$this->assertResourcesSorted($result);
 
 		// Assert that any Creator Network or Creator Profile form is not included in the resultset.
 		foreach ( $result as $formID => $form) {
@@ -378,8 +377,7 @@ class ResourceTest extends WPTestCase
 		$this->assertArrayHasKey($_ENV['CONVERTKIT_API_LANDING_PAGE_ID'], $result);
 
 		// Assert order of data is in ascending alphabetical order.
-		$this->assertEquals('Character Encoding', reset($result)[ $this->resource->order_by ]);
-		$this->assertEquals('Legacy Landing Page', end($result)[ $this->resource->order_by ]);
+		$this->assertResourcesSorted($result);
 
 		// Confirm resources stored in WordPress options.
 		$resources = get_option($this->resource->settings_name);
@@ -432,8 +430,7 @@ class ResourceTest extends WPTestCase
 		$this->assertArrayHasKey($_ENV['CONVERTKIT_API_TAG_ID'], $result);
 
 		// Assert order of data is in ascending alphabetical order.
-		$this->assertEquals('gravityforms-tag-1', reset($result)[ $this->resource->order_by ]);
-		$this->assertEquals('wpforms', end($result)[ $this->resource->order_by ]);
+		$this->assertResourcesSorted($result);
 
 		// Confirm resources stored in WordPress options.
 		$resources = get_option($this->resource->settings_name);
@@ -481,8 +478,7 @@ class ResourceTest extends WPTestCase
 		$this->assertArrayHasKey($_ENV['CONVERTKIT_API_CUSTOM_FIELD_ID'], $result);
 
 		// Assert order of data is in ascending alphabetical order.
-		$this->assertEquals('Billing Address', reset($result)[ $this->resource->order_by ]);
-		$this->assertEquals('URL', end($result)[ $this->resource->order_by ]);
+		$this->assertResourcesSorted($result);
 
 		// Confirm resources stored in WordPress options.
 		$resources = get_option($this->resource->settings_name);
@@ -529,8 +525,7 @@ class ResourceTest extends WPTestCase
 		$this->assertArrayHasKey($_ENV['CONVERTKIT_API_SEQUENCE_ID'], $result);
 
 		// Assert order of data is in ascending alphabetical order.
-		$this->assertEquals('Another Sequence', reset($result)[ $this->resource->order_by ]);
-		$this->assertEquals('WordPress Sequence', end($result)[ $this->resource->order_by ]);
+		$this->assertResourcesSorted($result);
 
 		// Confirm resources stored in WordPress options.
 		$resources = get_option($this->resource->settings_name);
@@ -621,8 +616,7 @@ class ResourceTest extends WPTestCase
 		$this->assertArrayHasKey($_ENV['CONVERTKIT_API_PRODUCT_ID'], $result);
 
 		// Assert order of data is in ascending alphabetical order.
-		$this->assertEquals('Example Tip Jar', reset($result)[ $this->resource->order_by ]);
-		$this->assertEquals('PDF Guide', end($result)[ $this->resource->order_by ]);
+		$this->assertResourcesSorted($result);
 
 		// Confirm resources stored in WordPress options.
 		$resources = get_option($this->resource->settings_name);
@@ -670,9 +664,8 @@ class ResourceTest extends WPTestCase
 		// Assert array keys are preserved.
 		$this->assertArrayHasKey($_ENV['CONVERTKIT_API_POST_ID'], $result);
 
-		// Assert order of data is in ascending published_at order.
-		$this->assertEquals('New Broadcast', reset($result)['title']);
-		$this->assertEquals('Test Subject', end($result)['title']);
+		// Assert order of data is in descending published_at order.
+		$this->assertResourcesSorted($result);
 
 		// Confirm resources stored in WordPress options.
 		$resources = get_option($this->resource->settings_name);
@@ -715,6 +708,29 @@ class ResourceTest extends WPTestCase
 		$this->assertInstanceOf(\WP_Error::class, $result);
 		$this->assertEquals($result->get_error_code(), 'convertkit_resource_refresh_error');
 		$this->assertEquals($result->get_error_message(), 'Resource type ' . $this->resource->type . ' is not supported in ConvertKit_Resource class.');
+	}
+
+	/**
+	 * Asserts that the given resources are sorted by the resource class' order_by and order properties,
+	 * regardless of which resources exist on the Kit account.
+	 *
+	 * @since   2.8.0
+	 *
+	 * @param   array $resources  Resources.
+	 */
+	private function assertResourcesSorted($resources)
+	{
+		// Assert every resource has the order_by key.
+		$values = array_column($resources, $this->resource->order_by);
+		$this->assertCount(count($resources), $values);
+
+		// Assert resources are in the expected order.
+		$sorted = $values;
+		usort($sorted, 'strcmp');
+		if ($this->resource->order === 'desc') {
+			$sorted = array_reverse($sorted);
+		}
+		$this->assertEquals($sorted, $values);
 	}
 
 	/**
