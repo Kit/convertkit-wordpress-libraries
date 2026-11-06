@@ -160,6 +160,28 @@ class AppServerTest extends WPTestCase
 	}
 
 	/**
+	 * Test that register_site() sends the registration token, if provided.
+	 *
+	 * @since   2.9.0
+	 */
+	public function testRegisterSiteWithRegistrationToken()
+	{
+		$this->response['body'] = array( 'site_secret' => 'secret' );
+
+		$this->app_server->register_site('access-token', 'registration-token');
+
+		$this->assertEquals(
+			array(
+				'site_url'           => get_site_url(),
+				'client_id'          => 'client-id',
+				'access_token'       => 'access-token',
+				'registration_token' => 'registration-token',
+			),
+			$this->request['body']
+		);
+	}
+
+	/**
 	 * Test that unregister_site() sends a DELETE request, and returns the remaining sites.
 	 *
 	 * @since   2.9.0

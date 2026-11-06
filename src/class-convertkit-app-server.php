@@ -125,12 +125,18 @@ class ConvertKit_App_Server {
 	 *
 	 * @since   2.9.0
 	 *
-	 * @param   string $access_token   Kit access token.
-	 * @return  WP_Error|array          Response, including the site_secret
+	 * @param   string $access_token        Kit access token.
+	 * @param   string $registration_token  One-time registration token the App Server sent with the authorization code.
+	 * @return  WP_Error|array               Response, including the site_secret
 	 */
-	public function register_site( $access_token ) {
+	public function register_site( $access_token, $registration_token = '' ) {
 
-		return $this->request( 'POST', '/api/sites', array( 'access_token' => $access_token ), 200 );
+		$body = array( 'access_token' => $access_token );
+		if ( ! empty( $registration_token ) ) {
+			$body['registration_token'] = $registration_token;
+		}
+
+		return $this->request( 'POST', '/api/sites', $body, 200 );
 
 	}
 
