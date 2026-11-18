@@ -126,6 +126,10 @@ trait TestsTrait
         $this->assertArrayHasKey('click_tracking_enabled', $stats);
         $this->assertArrayHasKey('starting', $stats);
         $this->assertArrayHasKey('ending', $stats);
+        $this->assertArrayHasKey('open_rate', $stats);
+        $this->assertArrayHasKey('click_rate', $stats);
+        $this->assertArrayHasKey('unsubscribe_rate', $stats);
+        $this->assertArrayHasKey('bounce_rate', $stats);
     }
 
     /**
@@ -882,6 +886,8 @@ trait TestsTrait
         $this->assertArrayHasKey('hold', $sequence);
         $this->assertArrayHasKey('repeat', $sequence);
         $this->assertArrayHasKey('created_at', $sequence);
+        $this->assertArrayHasKey('email_count', $sequence);
+        $this->assertArrayHasKey('subscriber_count', $sequence);
     }
 
     /**
@@ -1074,6 +1080,8 @@ trait TestsTrait
         $this->assertInstanceOf('stdClass', $result);
         $this->assertArrayHasKey('sequence', get_object_vars($result));
         $this->assertArrayHasKey('id', get_object_vars($result->sequence));
+        $this->assertArrayHasKey('email_count', get_object_vars($result->sequence));
+        $this->assertArrayHasKey('subscriber_count', get_object_vars($result->sequence));
     }
 
     /**
@@ -1577,6 +1585,7 @@ trait TestsTrait
         $this->assertArrayHasKey('delay_value', $email);
         $this->assertArrayHasKey('delay_unit', $email);
         $this->assertArrayHasKey('send_days', $email);
+        $this->assertArrayHasKey('has_unpublished_changes', $email);
     }
 
     /**
@@ -1784,6 +1793,104 @@ trait TestsTrait
     }
 
     /**
+     * Test that update_sequence_email() returns an error when changing the email template
+     * without content would discard the email's content, and changes the email template
+     * when allow_content_loss is specified.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testUpdateSequenceEmailWithAllowContentLoss()
+    {
+        $emailTemplateID = (int) $_ENV['CONVERTKIT_API_EMAIL_TEMPLATE_STARTING_POINT_ID'];
+
+        // Create a draft sequence email with content.
+        $result = $this->api->create_sequence_email(
+            sequence_id: (int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+            subject: 'Test Sequence Email',
+            delay_value: 1,
+            delay_unit: 'days',
+            content: 'Test Content',
+            email_template_id: (int) $_ENV['CONVERTKIT_API_EMAIL_TEMPLATE_ID'],
+            published: false
+        );
+        $sequenceEmailID = $result->email->id;
+
+        // Confirm changing to a Starting point template without content errors, as it would discard the content.
+        $this->assertApiError(
+            function () use ($sequenceEmailID, $emailTemplateID) {
+                return $this->api->update_sequence_email(
+                    sequence_id: (int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+                    email_id: $sequenceEmailID,
+                    email_template_id: $emailTemplateID
+                );
+            }
+        );
+
+        // Confirm the email template is changed when allow_content_loss is specified.
+        $result = $this->api->update_sequence_email(
+            sequence_id: (int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+            email_id: $sequenceEmailID,
+            email_template_id: $emailTemplateID,
+            allow_content_loss: true
+        );
+        $this->assertEquals($emailTemplateID, $result->email->email_template_id);
+
+        // Delete Sequence Email.
+        $this->api->delete_sequence_email((int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'], $sequenceEmailID);
+        $this->assertLastResponseStatusCode(204);
+    }
+
+    /**
+     * Test that update_sequence_email() keeps the email's send days when they aren't specified,
+     * and resets them to inherit the sequence's send days when an empty array is specified.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testUpdateSequenceEmailSendDays()
+    {
+        // Create a draft sequence email that sends on specific days.
+        $result = $this->api->create_sequence_email(
+            sequence_id: (int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+            subject: 'Test Sequence Email',
+            delay_value: 1,
+            delay_unit: 'days',
+            content: 'Test Content',
+            published: false,
+            send_days: ['monday', 'tuesday']
+        );
+        $sequenceEmailID = $result->email->id;
+
+        // Update the subject only.
+        $result = $this->api->update_sequence_email(
+            sequence_id: (int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+            email_id: $sequenceEmailID,
+            subject: 'Edited Test Sequence Email'
+        );
+
+        // Confirm the subject changed and the send days were kept.
+        $this->assertEquals('Edited Test Sequence Email', $result->email->subject);
+        $this->assertEquals(['monday', 'tuesday'], $result->email->send_days);
+
+        // Reset the send days.
+        $result = $this->api->update_sequence_email(
+            sequence_id: (int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'],
+            email_id: $sequenceEmailID,
+            send_days: []
+        );
+
+        // Confirm all 7 days are returned, as the email now inherits the sequence's send days.
+        $this->assertCount(7, $result->email->send_days);
+
+        // Delete Sequence Email.
+        $this->api->delete_sequence_email((int) $_ENV['CONVERTKIT_API_SEQUENCE_ID'], $sequenceEmailID);
+        $this->assertLastResponseStatusCode(204);
+    }
+
+    /**
      * Test that get_sequence_email() returns the expected data.
      *
      * @since   2.6.0
@@ -1798,6 +1905,7 @@ trait TestsTrait
         );
         $this->assertInstanceOf('stdClass', $result);
         $this->assertArrayHasKey('id', get_object_vars($result->email));
+        $this->assertArrayHasKey('has_unpublished_changes', get_object_vars($result->email));
     }
 
     /**
@@ -5230,6 +5338,9 @@ trait TestsTrait
 
         // Assert content is not included.
         $this->assertArrayNotHasKey('content', get_object_vars($result->posts[0]));
+
+        // Assert the product ID for paid posts is included.
+        $this->assertArrayHasKey('product_id', get_object_vars($result->posts[0]));
     }
 
     /**
@@ -5350,6 +5461,7 @@ trait TestsTrait
         $result = $this->api->get_post($_ENV['CONVERTKIT_API_POST_ID']);
         $result = get_object_vars($result->post);
         $this->assertEquals($result['id'], $_ENV['CONVERTKIT_API_POST_ID']);
+        $this->assertArrayHasKey('product_id', $result);
     }
 
     /**
@@ -5616,6 +5728,94 @@ trait TestsTrait
         // Delete Broadcast.
         $this->api->delete_broadcast($broadcastID);
         $this->assertLastResponseStatusCode(204);
+    }
+
+    /**
+     * Test that update_broadcast() returns an error when changing the email template
+     * without content would discard the broadcast's content, and changes the email
+     * template when allow_content_loss is specified.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testUpdateBroadcastWithAllowContentLoss()
+    {
+        $emailTemplateID = (int) $_ENV['CONVERTKIT_API_EMAIL_TEMPLATE_STARTING_POINT_ID'];
+
+        // Create a broadcast with content.
+        $result = $this->api->create_broadcast(
+            subject: 'Test Subject',
+            content: 'Test Content',
+            description: 'Test Broadcast from PHP SDK',
+            email_template_id: $_ENV['CONVERTKIT_API_EMAIL_TEMPLATE_ID']
+        );
+        $broadcastID = $result->broadcast->id;
+
+        // Set broadcast_ids to ensure broadcast is deleted after test.
+        $this->broadcast_ids[] = $broadcastID;
+
+        // Confirm changing to a Starting point template without content errors, as it would discard the content.
+        $this->assertApiError(
+            function () use ($broadcastID, $emailTemplateID) {
+                return $this->api->update_broadcast(
+                    id: $broadcastID,
+                    email_template_id: (string) $emailTemplateID
+                );
+            }
+        );
+
+        // Confirm the email template is changed when allow_content_loss is specified.
+        $result = $this->api->update_broadcast(
+            id: $broadcastID,
+            email_template_id: (string) $emailTemplateID,
+            allow_content_loss: true
+        );
+        $this->assertEquals($emailTemplateID, $result->broadcast->email_template->id);
+    }
+
+    /**
+     * Test that update_broadcast() keeps a public broadcast's public setting and published
+     * date when they aren't specified.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testUpdatePublicBroadcastWithoutPublic()
+    {
+        // Create DateTime object.
+        $publishedAt = new DateTime('now');
+        $publishedAt->modify('+7 days');
+        $sendAt = new DateTime('now');
+        $sendAt->modify('+14 days');
+
+        // Create a public broadcast.
+        $result = $this->api->create_broadcast(
+            subject: 'Test Subject',
+            content: 'Test Content',
+            description: 'Test Broadcast from PHP SDK',
+            public: true,
+            published_at: $publishedAt,
+            send_at: $sendAt
+        );
+        $broadcastID = $result->broadcast->id;
+        $publishedAtValue = $result->broadcast->published_at;
+
+        // Set broadcast_ids to ensure broadcast is deleted after test.
+        $this->broadcast_ids[] = $broadcastID;
+
+        // Update the subject only.
+        $result = $this->api->update_broadcast(
+            id: $broadcastID,
+            subject: 'New Test Subject'
+        );
+
+        // Confirm the subject changed and the broadcast is still public, with the same published date.
+        $result = get_object_vars($result->broadcast);
+        $this->assertEquals('New Test Subject', $result['subject']);
+        $this->assertTrue($result['public']);
+        $this->assertEquals($publishedAtValue, $result['published_at']);
     }
 
     /**
@@ -6751,6 +6951,193 @@ trait TestsTrait
     }
 
     /**
+     * Test that get_webhook_endpoint_deliveries() returns the expected data.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetWebhookEndpointDeliveries()
+    {
+        // Create a webhook endpoint first.
+        $result = $this->api->create_webhook_endpoint(
+            url: 'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
+            events: ['subscriber.created']
+        );
+        $id = $result->webhook_endpoint->id;
+
+        // Set webhook_endpoint_ids to ensure webhook endpoints are deleted after test.
+        $this->webhook_endpoint_ids = [ $id ];
+
+        // Get deliveries.
+        $result = $this->api->get_webhook_endpoint_deliveries($id);
+
+        // Assert deliveries and pagination exist.
+        $this->assertDataExists($result, 'deliveries');
+        $this->assertPaginationExists($result);
+    }
+
+    /**
+     * Test that get_webhook_endpoint_deliveries() returns the expected data
+     * when a status is specified.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetWebhookEndpointDeliveriesWithStatus()
+    {
+        // Create a webhook endpoint first.
+        $result = $this->api->create_webhook_endpoint(
+            url: 'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
+            events: ['subscriber.created']
+        );
+        $id = $result->webhook_endpoint->id;
+
+        // Set webhook_endpoint_ids to ensure webhook endpoints are deleted after test.
+        $this->webhook_endpoint_ids = [ $id ];
+
+        // Get failed deliveries.
+        $result = $this->api->get_webhook_endpoint_deliveries(
+            id: $id,
+            status: 'failed'
+        );
+
+        // Assert deliveries and pagination exist.
+        $this->assertDataExists($result, 'deliveries');
+        $this->assertPaginationExists($result);
+
+        // Assert only failed deliveries were returned.
+        foreach ($result->deliveries as $delivery) {
+            $this->assertEquals('failed', $delivery->status);
+        }
+    }
+
+    /**
+     * Test that get_webhook_endpoint_deliveries() throws a ClientException when an invalid
+     * webhook endpoint ID is specified.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetWebhookEndpointDeliveriesWithInvalidID()
+    {
+        $this->assertApiError(
+            function () {
+                return $this->api->get_webhook_endpoint_deliveries(12345);
+            }
+        );
+    }
+
+    /**
+     * Test that get_webhook_endpoint_deliveries() and get_webhook_endpoint_delivery()
+     * return the expected data once a delivery has been made to the webhook endpoint.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetWebhookEndpointDelivery()
+    {
+        // Create a webhook endpoint first.
+        $result = $this->api->create_webhook_endpoint(
+            url: 'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
+            events: ['subscriber.created']
+        );
+        $id = $result->webhook_endpoint->id;
+
+        // Set webhook_endpoint_ids to ensure webhook endpoints are deleted after test.
+        $this->webhook_endpoint_ids = [ $id ];
+
+        // Create a subscriber, which triggers a delivery to the webhook endpoint.
+        $result = $this->api->create_subscriber(
+            email_address: $this->generateEmailAddress()
+        );
+
+        // Set subscriber_ids to ensure subscriber is unsubscribed after test.
+        $this->subscriber_ids = [ $result->subscriber->id ];
+
+        // Wait for the delivery to be made, as deliveries are sent asynchronously.
+        $delivery = $this->retryUntil(
+            function () use ($id) {
+                $result = $this->api->get_webhook_endpoint_deliveries(
+                    id: $id,
+                    event_type: 'subscriber.created'
+                );
+
+                return count($result->deliveries) ? $result->deliveries[0] : false;
+            }
+        );
+        $this->assertNotFalse($delivery, 'No delivery was made to the webhook endpoint in time.');
+        $delivery_id = $delivery->id;
+
+        // Confirm filtering by an event type the webhook endpoint isn't subscribed to returns no deliveries.
+        $result = $this->api->get_webhook_endpoint_deliveries(
+            id: $id,
+            event_type: 'tag.created'
+        );
+        $this->assertCount(0, $result->deliveries);
+
+        // Get the delivery.
+        $result = $this->api->get_webhook_endpoint_delivery(
+            id: $id,
+            delivery_id: $delivery_id
+        );
+
+        // Confirm the delivery and its attempts are returned, without the payload.
+        $delivery = get_object_vars($result->delivery);
+        $this->assertEquals($delivery_id, $delivery['id']);
+        $this->assertEquals('subscriber.created', $delivery['event_type']);
+        $this->assertArrayHasKey('attempts', $delivery);
+        $this->assertIsArray($delivery['attempts']);
+        $this->assertArrayNotHasKey('payload', $delivery);
+
+        // Get the delivery, including the payload.
+        $result = $this->api->get_webhook_endpoint_delivery(
+            id: $id,
+            delivery_id: $delivery_id,
+            include_payload: true
+        );
+
+        // Confirm the events sent in the delivery are returned.
+        $delivery = get_object_vars($result->delivery);
+        $this->assertArrayHasKey('payload', $delivery);
+        $this->assertIsArray($delivery['payload']);
+        $this->assertEquals('subscriber.created', $delivery['payload'][0]->type);
+    }
+
+    /**
+     * Test that get_webhook_endpoint_delivery() throws a ClientException when an invalid
+     * delivery ID is specified.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetWebhookEndpointDeliveryWithInvalidID()
+    {
+        // Create a webhook endpoint first.
+        $result = $this->api->create_webhook_endpoint(
+            url: 'https://webhook.site/' . str_shuffle('wfervdrtgsdewrafvwefds'),
+            events: ['subscriber.created']
+        );
+        $id = $result->webhook_endpoint->id;
+
+        // Set webhook_endpoint_ids to ensure webhook endpoints are deleted after test.
+        $this->webhook_endpoint_ids = [ $id ];
+
+        $this->assertApiError(
+            function () use ($id) {
+                return $this->api->get_webhook_endpoint_delivery(
+                    id: $id,
+                    delivery_id: 12345
+                );
+            }
+        );
+    }
+
+    /**
      * Test that verify_webhook_signature() returns true when the signature is valid.
      *
      * @since   2.8.0
@@ -7238,6 +7625,9 @@ trait TestsTrait
         // Assert purchases and pagination exist.
         $this->assertDataExists($result, 'purchases');
         $this->assertPaginationExists($result);
+
+        // Assert the purchase's source is included.
+        $this->assertArrayHasKey('source', get_object_vars($result->purchases[0]));
     }
 
     /**
@@ -7341,7 +7731,8 @@ trait TestsTrait
         // Get purchase.
         $result = $this->api->get_purchase($id);
         $this->assertInstanceOf('stdClass', $result);
-        $this->assertEquals($purchases->purchases[0]->id, $id);
+        $this->assertEquals($id, $result->purchase->id);
+        $this->assertArrayHasKey('source', get_object_vars($result->purchase));
     }
 
     /**
@@ -7581,6 +7972,219 @@ trait TestsTrait
         // Assert has_previous_page and has_next_page are correct.
         $this->assertFalse($result->pagination->has_previous_page);
         $this->assertTrue($result->pagination->has_next_page);
+    }
+
+    /**
+     * Test that get_apps() returns the expected data.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetApps()
+    {
+        $result = $this->api->get_apps();
+
+        // Assert apps and pagination exist.
+        $this->assertDataExists($result, 'apps');
+        $this->assertPaginationExists($result);
+
+        // Check first app in resultset has expected data.
+        $app = get_object_vars($result->apps[0]);
+        $this->assertArrayHasKey('id', $app);
+        $this->assertArrayHasKey('name', $app);
+        $this->assertArrayHasKey('summary', $app);
+        $this->assertArrayHasKey('categories', $app);
+        $this->assertArrayHasKey('installable', $app);
+        $this->assertArrayHasKey('owned', $app);
+        $this->assertArrayHasKey('status', $app);
+    }
+
+    /**
+     * Test that get_apps() returns the expected data
+     * when the total count is included.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetAppsWithTotalCount()
+    {
+        $result = $this->api->get_apps(
+            include_total_count: true
+        );
+
+        // Assert apps and pagination exist.
+        $this->assertDataExists($result, 'apps');
+        $this->assertPaginationExists($result);
+
+        // Assert total count is included.
+        $this->assertArrayHasKey('total_count', get_object_vars($result->pagination));
+        $this->assertGreaterThan(0, $result->pagination->total_count);
+    }
+
+    /**
+     * Test that get_apps() returns the expected data
+     * when pagination parameters and per_page limits are specified.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetAppsPagination()
+    {
+        $result = $this->api->get_apps(
+            per_page: 1
+        );
+
+        // Assert apps and pagination exist.
+        $this->assertDataExists($result, 'apps');
+        $this->assertPaginationExists($result);
+
+        // Assert a single app was returned.
+        $this->assertCount(1, $result->apps);
+
+        // Assert has_previous_page and has_next_page are correct.
+        $this->assertFalse($result->pagination->has_previous_page);
+        $this->assertTrue($result->pagination->has_next_page);
+
+        // Use pagination to fetch next page.
+        $result = $this->api->get_apps(
+            per_page: 1,
+            after_cursor: $result->pagination->end_cursor
+        );
+
+        // Assert apps and pagination exist.
+        $this->assertDataExists($result, 'apps');
+        $this->assertPaginationExists($result);
+
+        // Assert a single app was returned.
+        $this->assertCount(1, $result->apps);
+
+        // Assert has_previous_page is correct.
+        $this->assertTrue($result->pagination->has_previous_page);
+
+        // Use pagination to fetch previous page.
+        $result = $this->api->get_apps(
+            per_page: 1,
+            before_cursor: $result->pagination->start_cursor
+        );
+
+        // Assert apps and pagination exist.
+        $this->assertDataExists($result, 'apps');
+        $this->assertPaginationExists($result);
+
+        // Assert a single app was returned.
+        $this->assertCount(1, $result->apps);
+    }
+
+    /**
+     * Test that get_apps() returns the expected data
+     * when categories are specified.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetAppsWithCategories()
+    {
+        $categories = ['analytics', 'e_commerce'];
+        $result = $this->api->get_apps(
+            categories: $categories
+        );
+
+        // Assert apps and pagination exist.
+        $this->assertDataExists($result, 'apps');
+        $this->assertPaginationExists($result);
+
+        // Assert each app is listed under at least one of the categories.
+        foreach ($result->apps as $app) {
+            $this->assertNotEmpty(array_intersect($categories, $app->categories));
+        }
+    }
+
+    /**
+     * Test that get_apps() throws a ClientException when an invalid
+     * category is specified.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetAppsWithInvalidCategory()
+    {
+        $this->assertApiError(
+            function () {
+                return $this->api->get_apps(
+                    categories: ['not-a-category']
+                );
+            }
+        );
+    }
+
+    /**
+     * Test that get_apps() returns the expected data
+     * when a search query is specified.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetAppsWithQuery()
+    {
+        $result = $this->api->get_apps(
+            query: 'WordPress'
+        );
+
+        // Assert apps and pagination exist.
+        $this->assertDataExists($result, 'apps');
+        $this->assertPaginationExists($result);
+    }
+
+    /**
+     * Test that get_app() returns the expected data.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetApp()
+    {
+        // Get ID of first app.
+        $apps = $this->api->get_apps(
+            per_page: 1
+        );
+        $id = $apps->apps[0]->id;
+
+        // Get app.
+        $result = $this->api->get_app($id);
+
+        // Confirm the expected app and its details were returned.
+        $app = get_object_vars($result->app);
+        $this->assertEquals($id, $app['id']);
+        $this->assertArrayHasKey('description', $app);
+        $this->assertArrayHasKey('capabilities', $app);
+        $this->assertArrayHasKey('links', $app);
+        $this->assertArrayHasKey('media_links', $app);
+        $this->assertArrayHasKey('upgrade_required', $app);
+        $this->assertArrayHasKey('install_url', $app);
+    }
+
+    /**
+     * Test that get_app() throws a ClientException when an invalid
+     * app ID is specified.
+     *
+     * @since   2.9.0
+     *
+     * @return void
+     */
+    public function testGetAppWithInvalidID()
+    {
+        $this->assertApiError(
+            function () {
+                return $this->api->get_app(999999999);
+            }
+        );
     }
 
     /**
