@@ -816,21 +816,23 @@ trait ConvertKit_API_Traits
     }
 
     /**
-     * Updates a sequence
+     * Updates a sequence email.
      *
-     * @param integer            $sequence_id       Sequence ID.
-     * @param integer            $email_id          Sequence Email ID.
-     * @param string|null        $subject           Subject line of the email.
-     * @param integer|null       $delay_value       Number of days or hours to wait before sending this email after the previous one.
-     * @param string|null        $delay_unit        Unit for the send delay. Use `days` for schedule-aware delivery, `hours` for a fixed hourly delay.
-     * @param string|null        $preview_text      Preview text shown in email clients before the email is opened.
-     * @param string|null        $content           HTML body content of the email.
-     * @param integer|null       $email_template_id ID of the email template to use for layout and styling.
-     * @param boolean|null       $published         Whether the email is active and will be sent to subscribers.
-     * @param array<string>|null $send_days         Days of the week this email may be sent. Defaults to all 7 days (inherits the sequence schedule). Pass a subset to restrict delivery, or null to reset to all days.
-     * @param integer|null       $position          Zero-based position of the email in the sequence. Assigned automatically after the last email if omitted.
+     * @param integer            $sequence_id        Sequence ID.
+     * @param integer            $email_id           Sequence Email ID.
+     * @param string|null        $subject            Subject line of the email.
+     * @param integer|null       $delay_value        Number of days or hours to wait before sending this email after the previous one.
+     * @param string|null        $delay_unit         Unit for the send delay. Use `days` for schedule-aware delivery, `hours` for a fixed hourly delay.
+     * @param string|null        $preview_text       Preview text shown in email clients before the email is opened.
+     * @param string|null        $content            HTML body content of the email.
+     * @param integer|null       $email_template_id  ID of the email template to use for layout and styling.
+     * @param boolean|null       $published          Whether the email is active and will be sent to subscribers.
+     * @param array<string>|null $send_days          Days of the week this email may be sent. Pass a subset to restrict delivery, or an empty array to reset to all days
+     *                                               (inherits the sequence schedule). Leave as null to keep the email's current setting.
+     * @param integer|null       $position           Zero-based position of the email in the sequence. Assigned automatically after the last email if omitted.
+     * @param boolean            $allow_content_loss Confirm changing $email_template_id without $content, when this would discard the email's existing content.
      *
-     * @see https://developers.kit.com/api-reference/sequences/create-a-sequence
+     * @see https://developers.kit.com/api-reference/sequence-emails/update-a-sequence-email
      *
      * @return mixed|object
      */
@@ -845,10 +847,11 @@ trait ConvertKit_API_Traits
         ?int $email_template_id = null,
         ?bool $published = null,
         ?array $send_days = null,
-        ?int $position = null
+        ?int $position = null,
+        bool $allow_content_loss = false
     ) {
         // Build parameters.
-        $options = ['send_days' => $send_days];
+        $options = [];
 
         if (!is_null($subject)) {
             $options['subject'] = $subject;
@@ -872,10 +875,14 @@ trait ConvertKit_API_Traits
             $options['published'] = $published;
         }
         if (!is_null($send_days)) {
-            $options['send_days'] = $send_days;
+            // An empty array resets the email to inherit the sequence's send days.
+            $options['send_days'] = (count($send_days) ? $send_days : null);
         }
         if (!is_null($position)) {
             $options['position'] = $position;
+        }
+        if ($allow_content_loss) {
+            $options['allow_content_loss'] = true;
         }
 
         // Send request.
@@ -2137,26 +2144,28 @@ trait ConvertKit_API_Traits
     /**
      * Update a broadcast.
      *
-     * @param integer              $id                Broadcast ID.
-     * @param string               $subject           The broadcast email's subject.
-     * @param string               $content           The broadcast's email HTML content.
-     * @param string               $description       An internal description of this broadcast.
-     * @param boolean              $public            Specifies whether or not this is a public post.
-     * @param \DateTime|null       $published_at      Specifies the time that this post was published (applicable
-     *                                                only to public posts).
-     * @param \DateTime|null       $send_at           Time that this broadcast should be sent; leave blank to create
-     *                                                a draft broadcast. If set to a future time, this is the time that
-     *                                                the broadcast will be scheduled to send.
-     * @param string               $email_address     Sending email address; leave blank to use your account's
-     *                                                default sending email address.
-     * @param string               $email_template_id ID of the email template to use; leave blank to use your
-     *                                                account's default email template.
-     * @param string               $thumbnail_alt     Specify the ALT attribute of the public thumbnail image
-     *                                                (applicable only to public posts).
-     * @param string               $thumbnail_url     Specify the URL of the thumbnail image to accompany the broadcast
-     *                                                post (applicable only to public posts).
-     * @param string               $preview_text      Specify the preview text of the email.
-     * @param array<string,string> $subscriber_filter Filter subscriber(s) to send the email to.
+     * @param integer              $id                 Broadcast ID.
+     * @param string               $subject            The broadcast email's subject.
+     * @param string               $content            The broadcast's email HTML content.
+     * @param string               $description        An internal description of this broadcast.
+     * @param boolean|null         $public             Specifies whether or not this is a public post. Leave as null to keep the
+     *                                                 broadcast's current setting.
+     * @param \DateTime|null       $published_at       Specifies the time that this post was published (applicable
+     *                                                 only to public posts).
+     * @param \DateTime|null       $send_at            Time that this broadcast should be sent; leave blank to create
+     *                                                 a draft broadcast. If set to a future time, this is the time that
+     *                                                 the broadcast will be scheduled to send.
+     * @param string               $email_address      Sending email address; leave blank to use your account's
+     *                                                 default sending email address.
+     * @param string               $email_template_id  ID of the email template to use; leave blank to use your
+     *                                                 account's default email template.
+     * @param string               $thumbnail_alt      Specify the ALT attribute of the public thumbnail image
+     *                                                 (applicable only to public posts).
+     * @param string               $thumbnail_url      Specify the URL of the thumbnail image to accompany the broadcast
+     *                                                 post (applicable only to public posts).
+     * @param string               $preview_text       Specify the preview text of the email.
+     * @param array<string,string> $subscriber_filter  Filter subscriber(s) to send the email to.
+     * @param boolean              $allow_content_loss Confirm changing $email_template_id without $content, when this would discard the broadcast's existing content.
      *
      * @see https://developers.kit.com/api-reference/broadcasts/update-a-broadcast
      *
@@ -2167,7 +2176,7 @@ trait ConvertKit_API_Traits
         string $subject = '',
         string $content = '',
         string $description = '',
-        bool $public = false,
+        ?bool $public = null,
         ?\DateTime $published_at = null,
         ?\DateTime $send_at = null,
         string $email_address = '',
@@ -2175,14 +2184,14 @@ trait ConvertKit_API_Traits
         string $thumbnail_alt = '',
         string $thumbnail_url = '',
         string $preview_text = '',
-        array $subscriber_filter = []
+        array $subscriber_filter = [],
+        bool $allow_content_loss = false
     ) {
         $options = [
             'email_template_id' => $email_template_id,
             'email_address'     => $email_address,
             'content'           => $content,
             'description'       => $description,
-            'public'            => $public,
             'published_at'      => (!is_null($published_at) ? $published_at->format('Y-m-d H:i:s') : ''),
             'send_at'           => (!is_null($send_at) ? $send_at->format('Y-m-d H:i:s') : ''),
             'thumbnail_alt'     => $thumbnail_alt,
@@ -2201,9 +2210,17 @@ trait ConvertKit_API_Traits
             }
         }
 
+        if (!is_null($public)) {
+            $options['public'] = $public;
+        }
+
         // If the post isn't public, remove some options that don't apply.
-        if (!$public) {
+        if ($public === false) {
             unset($options['published_at'], $options['thumbnail_alt'], $options['thumbnail_url']);
+        }
+
+        if ($allow_content_loss) {
+            $options['allow_content_loss'] = true;
         }
 
         // Send request.
@@ -2594,6 +2611,85 @@ trait ConvertKit_API_Traits
     }
 
     /**
+     * List deliveries for a webhook endpoint.
+     *
+     * Delivery history is retained for 30 days.
+     *
+     * @param integer $id            Webhook Endpoint ID.
+     * @param string  $status        Delivery status (pending|delivered|failed|retrying).
+     * @param string  $event_type    Event type e.g. subscriber.created.
+     * @param string  $after_cursor  Return results after the given pagination cursor.
+     * @param string  $before_cursor Return results before the given pagination cursor.
+     * @param integer $per_page      Number of results to return.
+     *
+     * @since 2.9.0
+     *
+     * @see https://developers.kit.com/api-reference/webhooks/list-webhook-deliveries
+     *
+     * @return false|mixed
+     */
+    public function get_webhook_endpoint_deliveries(
+        int $id,
+        string $status = '',
+        string $event_type = '',
+        string $after_cursor = '',
+        string $before_cursor = '',
+        int $per_page = 100
+    ) {
+        // Build parameters.
+        $options = [];
+
+        if (!empty($status)) {
+            $options['status'] = $status;
+        }
+        if (!empty($event_type)) {
+            $options['event_type'] = $event_type;
+        }
+
+        // Send request.
+        return $this->get(
+            sprintf('webhook_endpoints/%s/deliveries', $id),
+            $this->build_total_count_and_pagination_params(
+                $options,
+                false,
+                $after_cursor,
+                $before_cursor,
+                $per_page
+            )
+        );
+    }
+
+    /**
+     * Get a delivery for a webhook endpoint, including each delivery attempt.
+     *
+     * @param integer $id              Webhook Endpoint ID.
+     * @param integer $delivery_id     Delivery ID.
+     * @param boolean $include_payload Include the events sent in the delivery.
+     *
+     * @since 2.9.0
+     *
+     * @see https://developers.kit.com/api-reference/webhooks/get-webhook-delivery-details
+     *
+     * @return mixed|object
+     */
+    public function get_webhook_endpoint_delivery(int $id, int $delivery_id, bool $include_payload = false)
+    {
+        // Build parameters.
+        $options = [];
+
+        // The API only accepts the strings true or false for this parameter.
+        if ($include_payload) {
+            $options['include_payload'] = 'true';
+        }
+
+        // Send request.
+        return $this->get(
+            sprintf('webhook_endpoints/%s/deliveries/%s', $id, $delivery_id),
+            $options
+        );
+    }
+
+    /**
      * Verify the signature of a webhook endpoint delivery.
      *
      * Kit signs each delivery with the endpoint's signing secret, sending the timestamp
@@ -2948,6 +3044,74 @@ trait ConvertKit_API_Traits
                 $per_page
             )
         );
+    }
+
+    /**
+     * List apps in the Kit App Store that the account can see, including any apps
+     * the account created.
+     *
+     * @param array<string> $categories          Only return apps in these App Store categories e.g. analytics, e_commerce.
+     * @param string        $query               Search app names, categories, summaries and descriptions.
+     * @param boolean       $include_total_count To include the total count of records in the response, use true.
+     * @param string        $after_cursor        Return results after the given pagination cursor.
+     * @param string        $before_cursor       Return results before the given pagination cursor.
+     * @param integer       $per_page            Number of results to return.
+     *
+     * @since 2.9.0
+     *
+     * @see https://developers.kit.com/api-reference/apps/list-apps
+     *
+     * @return false|mixed
+     */
+    public function get_apps(
+        array $categories = [],
+        string $query = '',
+        bool $include_total_count = false,
+        string $after_cursor = '',
+        string $before_cursor = '',
+        int $per_page = 100
+    ) {
+        // Build parameters.
+        $options = [];
+
+        if (!empty($categories)) {
+            $options['category'] = implode(',', $categories);
+        }
+        if (!empty($query)) {
+            $options['query'] = $query;
+        }
+
+        // Send request.
+        return $this->get(
+            'apps',
+            $this->build_total_count_and_pagination_params(
+                $options,
+                $include_total_count,
+                $after_cursor,
+                $before_cursor,
+                $per_page
+            )
+        );
+    }
+
+    /**
+     * Get an app in the Kit App Store, including its description, capabilities, links
+     * and install URL.
+     *
+     * The description is untrusted text written by the app's developer, and should be
+     * escaped before output.
+     *
+     * @param integer $id App ID.
+     *
+     * @since 2.9.0
+     *
+     * @see https://developers.kit.com/api-reference/apps/get-an-app
+     *
+     * @return mixed|object
+     */
+    public function get_app(int $id)
+    {
+        return $this->get(sprintf('apps/%s', $id));
     }
 
     /**
